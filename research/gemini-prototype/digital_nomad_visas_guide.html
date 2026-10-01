@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>全球数字游民居留通道调查手记 (1926-2026版)</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap');
+
+    :root {
+      --paper: #F4EFE6;
+      --paper-card: #FAF6F0;
+      --paper-dim: #E8E2D5;
+      --paper-darker: #DFD7C7;
+      --ink: #1A1A1A;
+      --ink-muted: #5C5850;
+      --brick-red: #B23A2F;
+      --brick-red-soft: #F0E1DE;
+      --line: #2D2A26;
+      --line-subtle: #D8D0C2;
+    }
+
+    body {
+      background-color: var(--paper);
+      color: var(--ink);
+      font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .font-serif-title {
+      font-family: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    }
+
+    .border-ink {
+      border-color: var(--line);
+    }
+    .border-ink-subtle {
+      border-color: var(--line-subtle);
+    }
+
+    /* Index Card with Watermark Flag */
+    .index-card {
+      position: relative;
+      background-color: var(--paper-card);
+      border: 1px solid var(--line);
+      box-shadow: 2px 2px 0px rgba(26, 26, 26, 0.9);
+      transition: all 0.15s ease-in-out;
+      overflow: hidden;
+    }
+    .index-card:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 3px 3px 0px rgba(26, 26, 26, 0.95);
+    }
+    .index-card:hover .flag-watermark {
+      opacity: 0.28 !important;
+      transform: scale(1.08) rotate(-2deg);
+    }
+    .index-card-active {
+      background-color: #FFFDF9 !important;
+      border: 2px solid var(--brick-red) !important;
+      box-shadow: 3px 3px 0px var(--brick-red) !important;
+    }
+    .index-card-active .flag-watermark {
+      opacity: 0.35 !important;
+      filter: saturate(1.2);
+    }
+
+    /* Flag Watermark layer inside card */
+    .flag-watermark {
+      position: absolute;
+      right: -8px;
+      bottom: -6px;
+      width: 110px;
+      height: 75px;
+      pointer-events: none;
+      opacity: 0.16;
+      transition: all 0.25s ease;
+      z-index: 1;
+    }
+    .card-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Stamp Badge */
+    .stamp-badge {
+      border: 1.5px solid var(--brick-red);
+      color: var(--brick-red);
+      font-family: 'Source Serif 4', Georgia, serif;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Map Styling */
+    .map-land {
+      fill: #EBE5D8;
+      stroke: #736C62;
+      stroke-width: 0.6;
+      stroke-linejoin: round;
+    }
+    .map-country-zone {
+      fill: #DDD4C3;
+      stroke: #2D2A26;
+      stroke-width: 1.1;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .map-country-zone:hover,
+    .map-country-hover {
+      fill: #E4D0CD !important;
+      stroke: #B23A2F !important;
+      stroke-width: 1.8 !important;
+      filter: drop-shadow(0 0 3px rgba(178, 58, 47, 0.4));
+    }
+    .map-country-selected {
+      fill: #DEC4C1 !important;
+      stroke: #B23A2F !important;
+      stroke-width: 2 !important;
+    }
+
+    /* Map Pins with Flag */
+    .map-pin-flag {
+      cursor: pointer;
+      transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .map-pin-flag:hover {
+      transform: scale(1.18);
+    }
+    .map-pin-flag.active rect.pin-bg {
+      stroke: #B23A2F !important;
+      stroke-width: 1.8 !important;
+      fill: #FFFDF9 !important;
+    }
+    .map-pin-flag.active text {
+      fill: #B23A2F !important;
+      font-weight: 700 !important;
+    }
+
+    /* Custom print scrollbars */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--paper-dim);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #ABA292;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-[#B23A2F] selection:text-white relative">
+
+  <!-- Floating Dynamic Tooltip for Map -->
+  <div id="map-tooltip" class="fixed z-50 pointer-events-none hidden transition-opacity duration-150">
+    <div class="bg-[#FAF6F0] border-2 border-[#1A1A1A] p-2.5 shadow-[4px_4px_0px_rgba(26,26,26,1)] max-w-xs text-xs space-y-1">
+      <div class="flex items-center gap-2 border-b border-ink-subtle pb-1">
+        <div id="tip-flag" class="w-6 h-4 border border-[#1A1A1A] shrink-0 overflow-hidden"></div>
+        <span id="tip-title" class="font-serif-title font-bold text-[#1A1A1A] truncate text-sm">国家</span>
+      </div>
+      <div class="text-[11px] text-[#5C5850]">
+        <div>门槛：<strong id="tip-threshold" class="text-[#B23A2F]">~</strong></div>
+        <div>期限：<span id="tip-duration" class="text-[#1A1A1A]">~</span></div>
+      </div>
+      <div id="tip-tag" class="text-[10px] text-[#5C5850] italic pt-1 border-t border-ink-subtle">点击调阅全宗案卷 &rarr;</div>
+    </div>
+  </div>
+
+  <!-- SVG DEFS: ALL 15 OFFICIAL HIGH-FIDELITY FLAGS -->
+  <svg style="display: none;">
+    <defs>
+      <!-- Portugal 🇵🇹 -->
+      <g id="flag-portugal">
+        <rect width="60" height="40" fill="#DA291C" />
+        <rect width="24" height="40" fill="#046A38" />
+        <circle cx="24" cy="20" r="7.5" fill="#FFC400" stroke="#1A1A1A" stroke-width="0.8" />
+        <rect x="21" y="16.5" width="6" height="7" fill="#FFFFFF" stroke="#DA291C" stroke-width="0.6" rx="1" />
+        <circle cx="24" cy="20" r="1.5" fill="#002B7F" />
+      </g>
+
+      <!-- Spain 🇪🇸 -->
+      <g id="flag-spain">
+        <rect width="60" height="40" fill="#C60B1E" />
+        <rect y="10" width="60" height="20" fill="#FFC400" />
+        <!-- Coat of Arms -->
+        <rect x="14" y="15" width="7" height="9" fill="#C60B1E" stroke="#1A1A1A" stroke-width="0.5" rx="1" />
+        <circle cx="17.5" cy="13" r="2" fill="#C60B1E" />
+      </g>
+
+      <!-- Italy 🇮🇹 -->
+      <g id="flag-italy">
+        <rect width="20" height="40" fill="#009246" />
+        <rect x="20" width="20" height="40" fill="#FFFFFF" />
+        <rect x="40" width="20" height="40" fill="#CE2B37" />
+      </g>
+
+      <!-- Croatia 🇭🇷 -->
+      <g id="flag-croatia">
+        <rect width="60" height="13.33" fill="#FF0000" />
+        <rect y="13.33" width="60" height="13.33" fill="#FFFFFF" />
+        <rect y="26.66" width="60" height="13.33" fill="#003399" />
+        <!-- Crest (Checkerboard) -->
+        <rect x="24" y="10" width="12" height="14" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="0.5" />
+        <rect x="24" y="10" width="4" height="4" fill="#FF0000" />
+        <rect x="32" y="10" width="4" height="4" fill="#FF0000" />
+        <rect x="28" y="14" width="4" height="4" fill="#FF0000" />
+        <rect x="24" y="18" width="4" height="4" fill="#FF0000" />
+        <rect x="32" y="18" width="4" height="4" fill="#FF0000" />
+      </g>
+
+      <!-- Greece 🇬🇷 -->
+      <g id="flag-greece">
+        <rect width="60" height="40" fill="#0D5EAF" />
+        <rect y="4.44" width="60" height="4.44" fill="#FFFFFF" />
+        <rect y="13.33" width="60" height="4.44" fill="#FFFFFF" />
+        <rect y="22.22" width="60" height="4.44" fill="#FFFFFF" />
+        <rect y="31.11" width="60" height="4.44" fill="#FFFFFF" />
+        <rect width="20" height="20" fill="#0D5EAF" />
+        <rect x="8" width="4" height="20" fill="#FFFFFF" />
+        <rect y="8" width="20" height="4" fill="#FFFFFF" />
+      </g>
+
+      <!-- Albania 🇦🇱 -->
+      <g id="flag-albania">
+        <rect width="60" height="40" fill="#E41E20" />
+        <!-- Double-headed eagle shape -->
+        <circle cx="30" cy="20" r="8" fill="#1A1A1A" />
+        <path d="M 23,16 L 37,16 L 33,26 L 27,26 Z" fill="#1A1A1A" />
+      </g>
+
+      <!-- Thailand 🇹🇭 -->
+      <g id="flag-thailand">
+        <rect width="60" height="40" fill="#A51931" />
+        <rect y="6.66" width="60" height="26.66" fill="#F4F5F8" />
+        <rect y="13.33" width="60" height="13.33" fill="#2D2A4A" />
+      </g>
+
+      <!-- Malaysia 🇲🇾 -->
+      <g id="flag-malaysia">
+        <!-- 14 Stripes -->
+        <rect width="60" height="40" fill="#CC0000" />
+        <rect y="2.85" width="60" height="2.85" fill="#FFFFFF" />
+        <rect y="8.55" width="60" height="2.85" fill="#FFFFFF" />
+        <rect y="14.25" width="60" height="2.85" fill="#FFFFFF" />
+        <rect y="19.95" width="60" height="2.85" fill="#FFFFFF" />
+        <rect y="25.65" width="60" height="2.85" fill="#FFFFFF" />
+        <rect y="31.35" width="60" height="2.85" fill="#FFFFFF" />
+        <rect y="37.05" width="60" height="2.85" fill="#FFFFFF" />
+        <!-- Blue Canton -->
+        <rect width="30" height="22.8" fill="#000066" />
+        <!-- Yellow Crescent and Star -->
+        <circle cx="13" cy="11.4" r="6" fill="#FFCC00" />
+        <circle cx="15" cy="11.4" r="5" fill="#000066" />
+        <circle cx="21" cy="11.4" r="4.5" fill="#FFCC00" />
+      </g>
+
+      <!-- Sri Lanka 🇱🇰 -->
+      <g id="flag-srilanka">
+        <rect width="60" height="40" fill="#FFBE29" />
+        <rect x="4" y="4" width="7" height="32" fill="#00534E" />
+        <rect x="13" y="4" width="7" height="32" fill="#EB7400" />
+        <rect x="23" y="4" width="33" height="32" fill="#8D153A" />
+        <!-- Lion -->
+        <circle cx="39" cy="20" r="6" fill="#FFBE29" />
+      </g>
+
+      <!-- Mexico 🇲🇽 -->
+      <g id="flag-mexico">
+        <rect width="20" height="40" fill="#006847" />
+        <rect x="20" width="20" height="40" fill="#FFFFFF" />
+        <rect x="40" width="20" height="40" fill="#CE1126" />
+        <!-- Eagle emblem -->
+        <circle cx="30" cy="20" r="4" fill="#85532A" />
+      </g>
+
+      <!-- Colombia 🇨🇴 -->
+      <g id="flag-colombia">
+        <rect width="60" height="20" fill="#FCD116" />
+        <rect y="20" width="60" height="10" fill="#003893" />
+        <rect y="30" width="60" height="10" fill="#CE1126" />
+      </g>
+
+      <!-- Brazil 🇧🇷 -->
+      <g id="flag-brazil">
+        <rect width="60" height="40" fill="#009739" />
+        <polygon points="30,5 55,20 30,35 5,20" fill="#FEDD00" />
+        <circle cx="30" cy="20" r="7.5" fill="#012169" />
+        <path d="M 23,20 A 7.5 7.5 0 0 1 37 17" stroke="#FFFFFF" stroke-width="1.2" fill="none" />
+      </g>
+
+      <!-- Costa Rica 🇨🇷 -->
+      <g id="flag-costarica">
+        <rect width="60" height="40" fill="#002B7F" />
+        <rect y="6.66" width="60" height="26.66" fill="#FFFFFF" />
+        <rect y="13.33" width="60" height="13.33" fill="#CE1126" />
+      </g>
+
+      <!-- Ecuador 🇪🇨 -->
+      <g id="flag-ecuador">
+        <rect width="60" height="20" fill="#FFDD00" />
+        <rect y="20" width="60" height="10" fill="#034EA2" />
+        <rect y="30" width="60" height="10" fill="#ED1C24" />
+        <ellipse cx="30" cy="20" rx="4" ry="5" fill="#034EA2" stroke="#FFDD00" stroke-width="0.5" />
+      </g>
+
+      <!-- Mauritius 🇲🇺 -->
+      <g id="flag-mauritius">
+        <rect width="60" height="10" fill="#EA2839" />
+        <rect y="10" width="60" height="10" fill="#1A206D" />
+        <rect y="20" width="60" height="10" fill="#FFD500" />
+        <rect y="30" width="60" height="10" fill="#00A551" />
+      </g>
+    </defs>
+  </svg>
+
+  <!-- MASTHEAD / NEWSPAPER HEADER -->
+  <header class="border-b-2 border-ink px-6 pt-5 pb-4 bg-[#F4EFE6]">
+    <div class="max-w-[1700px] mx-auto">
+      
+      <!-- Top Meta Bar -->
+      <div class="flex items-center justify-between text-[11px] text-[#5C5850] uppercase tracking-widest pb-2 border-b border-ink-subtle">
+        <div class="flex items-center gap-4">
+          <span>NO. 2026-D8 · FIELD HANDBOOK</span>
+          <span class="hidden sm:inline">|</span>
+          <span class="hidden sm:inline">远程工作者与数字游民全球定居观测</span>
+        </div>
+        <div class="flex items-center gap-3 font-mono">
+          <span>EDITION: VERIFIED 2026</span>
+          <span>·</span>
+          <span>CIRCULATION: GLOBAL</span>
+        </div>
+      </div>
+
+      <!-- Main Title Block -->
+      <div class="py-3 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="inline-block px-1.5 py-0.5 text-[10px] font-bold tracking-wider stamp-badge bg-[#F0E1DE]">FIELD REPORT</span>
+            <span class="text-xs text-[#B23A2F] font-semibold tracking-wider uppercase font-serif-title">非本地就业 · 境外收入 · 合法居留</span>
+          </div>
+          <h1 class="text-2xl sm:text-3xl lg:text-4xl font-serif-title font-bold text-[#1A1A1A] tracking-tight leading-none">
+            全球「D8 类」数字游民居留通道全景图志
+          </h1>
+          <p class="text-xs sm:text-sm text-[#5C5850] mt-1.5 max-w-3xl leading-relaxed">
+            专为境外赚钱、本地生活整理的合理门槛（月薪 $1,500–3,500 或等值储蓄）国家名录。卡片自带半透明国旗索引水印，地图支持真实国界光标悬浮互动。
+          </p>
+        </div>
+
+        <!-- Filter & Utility Buttons -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <button onclick="filterRegion('all')" id="btn-reg-all" class="px-3 py-1.5 border border-ink bg-[#1A1A1A] text-white font-medium text-xs">全部列名 (15)</button>
+          <button onclick="filterRegion('europe')" id="btn-reg-europe" class="px-3 py-1.5 border border-ink bg-[#FAF6F0] hover:bg-[#E8E2D5] text-[#1A1A1A] font-medium text-xs">欧陆申根 (6)</button>
+          <button onclick="filterRegion('asia')" id="btn-reg-asia" class="px-3 py-1.5 border border-ink bg-[#FAF6F0] hover:bg-[#E8E2D5] text-[#1A1A1A] font-medium text-xs">东亚及南亚 (3)</button>
+          <button onclick="filterRegion('latam')" id="btn-reg-latam" class="px-3 py-1.5 border border-ink bg-[#FAF6F0] hover:bg-[#E8E2D5] text-[#1A1A1A] font-medium text-xs">美洲及拉美 (5)</button>
+          <button onclick="filterRegion('other')" id="btn-reg-other" class="px-3 py-1.5 border border-ink bg-[#FAF6F0] hover:bg-[#E8E2D5] text-[#1A1A1A] font-medium text-xs">印度洋海岛 (1)</button>
+          
+          <button onclick="openQuizModal()" class="px-3 py-1.5 border-2 border-[#B23A2F] text-[#B23A2F] bg-[#FAF6F0] hover:bg-[#F0E1DE] font-bold text-xs flex items-center gap-1.5">
+            <span>§ 选签快速核对</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="border-b border-ink mt-1"></div>
+    </div>
+  </header>
+
+  <!-- WORKSPACE: SPLIT DESK (LEFT: MAP & CATALOG / RIGHT: FIELD DOSSIER) -->
+  <main class="flex-1 max-w-[1700px] w-full mx-auto grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+
+    <!-- LEFT COLUMN: MAP & PHYSICAL INDEX CARDS (Cols 1-7) -->
+    <section class="lg:col-span-7 flex flex-col border-r border-ink p-5 gap-5 overflow-y-auto max-h-[calc(100vh-145px)]">
+
+      <!-- Map Control Strip -->
+      <div class="flex items-center justify-between border-b border-ink pb-2 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="font-serif-title font-bold text-[#1A1A1A]">PLATE Ⅰ: 地理测绘分图</span>
+          <span class="text-[#5C5850]">/ 视野切换：</span>
+          <div class="inline-flex border border-ink bg-[#FAF6F0]">
+            <button onclick="setMapView('world')" id="btn-v-world" class="px-2.5 py-0.5 bg-[#1A1A1A] text-white font-medium text-[11px]">全球总测</button>
+            <button onclick="setMapView('europe')" id="btn-v-europe" class="px-2.5 py-0.5 hover:bg-[#E8E2D5] border-l border-ink text-[#1A1A1A] text-[11px]">欧洲分幅</button>
+            <button onclick="setMapView('asia')" id="btn-v-asia" class="px-2.5 py-0.5 hover:bg-[#E8E2D5] border-l border-ink text-[#1A1A1A] text-[11px]">亚洲分幅</button>
+            <button onclick="setMapView('americas')" id="btn-v-americas" class="px-2.5 py-0.5 hover:bg-[#E8E2D5] border-l border-ink text-[#1A1A1A] text-[11px]">美洲分幅</button>
+          </div>
+        </div>
+        <div class="text-[11px] text-[#5C5850] hidden sm:flex items-center gap-3">
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-[#DDD4C3] border border-[#2D2A26] inline-block"></span> 重点国家疆界</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 bg-[#E4D0CD] border border-[#B23A2F] inline-block"></span> 鼠标悬浮/聚焦</span>
+        </div>
+      </div>
+
+      <!-- Real-Geometry Vector Map with Flag Tags & Hover Highlighting -->
+      <div class="relative bg-[#FAF6F0] border border-ink p-2 shadow-[2px_2px_0px_rgba(26,26,26,0.85)]">
+        
+        <div class="absolute top-1.5 left-2 text-[9px] font-mono text-[#5C5850] pointer-events-none">
+          GEOGRAPHIC SURVEY PLATE · HOVER TO INSPECT · CLICK TO READ DOSSIER
+        </div>
+        <div class="absolute bottom-1.5 right-2 text-[9px] font-mono text-[#5C5850] pointer-events-none">
+          OFFICIAL BOUNDARIES 2026
+        </div>
+
+        <svg id="world-map-svg" viewBox="0 0 1000 500" class="w-full h-auto select-none transition-all duration-500 ease-in-out">
+          <!-- Graticule grid -->
+          <g stroke="#D4CDBC" stroke-width="0.5" stroke-dasharray="2,3">
+            <line x1="0" y1="125" x2="1000" y2="125" />
+            <line x1="0" y1="250" x2="1000" y2="250" />
+            <line x1="0" y1="375" x2="1000" y2="375" />
+            <line x1="250" y1="0" x2="250" y2="500" />
+            <line x1="500" y1="0" x2="500" y2="500" />
+            <line x1="750" y1="0" x2="750" y2="500" />
+          </g>
+
+          <!-- Base Global Landmass Layer -->
+          <g id="global-landmass">
+            <!-- North America Base -->
+            <path class="map-land" d="M 120,45 L 205,35 L 290,50 L 310,90 L 260,115 L 235,160 L 265,185 L 210,210 L 175,175 L 140,140 L 110,85 Z M 270,30 L 330,25 L 340,65 L 305,65 Z" />
+            <!-- South America Base -->
+            <path class="map-land" d="M 265,260 L 315,250 L 375,280 L 360,360 L 320,430 L 290,440 L 285,360 L 260,300 Z" />
+            <!-- Western / Northern Europe Base -->
+            <path class="map-land" d="M 465,145 L 485,115 L 535,80 L 590,95 L 600,145 L 540,165 L 490,160 L 460,175 Z M 440,120 L 460,105 L 465,130 L 445,140 Z M 495,65 L 530,60 L 550,115 L 510,110 Z" />
+            <!-- Africa Base -->
+            <path class="map-land" d="M 465,185 L 545,180 L 605,235 L 585,320 L 535,385 L 495,370 L 450,260 L 440,215 Z M 625,320 L 640,315 L 635,365 L 620,360 Z" />
+            <!-- Asia Mainland Base -->
+            <path class="map-land" d="M 590,95 L 750,75 L 890,85 L 860,160 L 800,165 L 775,235 L 725,245 L 685,210 L 605,215 Z M 710,240 L 735,240 L 730,285 L 695,270 Z M 740,210 L 810,215 L 785,290 L 755,270 Z M 840,135 L 870,145 L 850,210 L 830,180 Z" />
+            <!-- Australia & Indonesia Base -->
+            <path class="map-land" d="M 755,265 L 795,265 L 810,310 L 770,305 Z M 770,320 L 840,320 L 850,340 L 760,335 Z M 840,250 L 870,260 L 855,300 L 835,285 Z M 810,355 L 905,345 L 930,410 L 860,435 L 815,395 Z" />
+          </g>
+
+          <!-- TARGET COUNTRIES: REAL GEOMETRIC POLYGON LAYERS -->
+          <g id="target-country-zones">
+            <!-- 1. PORTUGAL -->
+            <path id="geo-portugal" class="map-country-zone"
+                  d="M 460,144 L 471,143 L 472,162 L 464,163 L 460,154 Z"
+                  onmouseenter="hoverCountry('portugal', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('portugal')" onclick="selectCountry('portugal')" />
+
+            <!-- 2. SPAIN -->
+            <path id="geo-spain" class="map-country-zone"
+                  d="M 471,143 L 504,138 L 505,152 L 493,165 L 475,166 L 464,163 L 472,162 Z M 498,172 L 508,168 L 506,173 Z"
+                  onmouseenter="hoverCountry('spain', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('spain')" onclick="selectCountry('spain')" />
+
+            <!-- 3. ITALY -->
+            <path id="geo-italy" class="map-country-zone"
+                  d="M 518,126 L 536,126 L 535,135 L 544,148 L 548,154 L 542,158 L 534,148 L 526,140 L 518,132 Z M 527,158 L 536,157 L 533,163 Z"
+                  onmouseenter="hoverCountry('italy', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('italy')" onclick="selectCountry('italy')" />
+
+            <!-- 4. CROATIA -->
+            <path id="geo-croatia" class="map-country-zone"
+                  d="M 536,126 L 548,125 L 546,132 L 542,135 L 549,144 L 544,144 L 537,133 Z"
+                  onmouseenter="hoverCountry('croatia', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('croatia')" onclick="selectCountry('croatia')" />
+
+            <!-- 5. GREECE -->
+            <path id="geo-greece" class="map-country-zone"
+                  d="M 556,146 L 567,145 L 569,158 L 558,161 L 554,152 Z M 562,164 L 574,163 L 571,166 Z"
+                  onmouseenter="hoverCountry('greece', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('greece')" onclick="selectCountry('greece')" />
+
+            <!-- 6. ALBANIA -->
+            <path id="geo-albania" class="map-country-zone"
+                  d="M 549,142 L 556,142 L 555,149 L 550,148 Z"
+                  onmouseenter="hoverCountry('albania', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('albania')" onclick="selectCountry('albania')" />
+
+            <!-- 7. THAILAND -->
+            <path id="geo-thailand" class="map-country-zone"
+                  d="M 764,204 L 784,203 L 786,224 L 778,228 L 774,250 L 767,248 L 770,222 L 762,216 Z"
+                  onmouseenter="hoverCountry('thailand', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('thailand')" onclick="selectCountry('thailand')" />
+
+            <!-- 8. MALAYSIA -->
+            <path id="geo-malaysia" class="map-country-zone"
+                  d="M 771,248 L 785,254 L 787,265 L 776,264 Z M 804,256 L 826,254 L 823,266 L 806,264 Z"
+                  onmouseenter="hoverCountry('malaysia', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('malaysia')" onclick="selectCountry('malaysia')" />
+
+            <!-- 9. SRI LANKA -->
+            <path id="geo-srilanka" class="map-country-zone"
+                  d="M 721,234 L 728,233 L 731,246 L 723,248 Z"
+                  onmouseenter="hoverCountry('srilanka', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('srilanka')" onclick="selectCountry('srilanka')" />
+
+            <!-- 10. MEXICO -->
+            <path id="geo-mexico" class="map-country-zone"
+                  d="M 166,168 L 222,165 L 244,194 L 235,214 L 205,212 L 180,234 L 165,210 Z M 150,172 L 164,185 L 158,212 L 150,195 Z"
+                  onmouseenter="hoverCountry('mexico', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('mexico')" onclick="selectCountry('mexico')" />
+
+            <!-- 11. COSTA RICA -->
+            <path id="geo-costarica" class="map-country-zone"
+                  d="M 256,233 L 268,236 L 266,244 L 255,239 Z"
+                  onmouseenter="hoverCountry('costarica', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('costarica')" onclick="selectCountry('costarica')" />
+
+            <!-- 12. COLOMBIA -->
+            <path id="geo-colombia" class="map-country-zone"
+                  d="M 267,240 L 288,238 L 297,260 L 278,266 L 268,252 Z"
+                  onmouseenter="hoverCountry('colombia', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('colombia')" onclick="selectCountry('colombia')" />
+
+            <!-- 13. ECUADOR -->
+            <path id="geo-ecuador" class="map-country-zone"
+                  d="M 264,254 L 276,254 L 278,268 L 263,266 Z"
+                  onmouseenter="hoverCountry('ecuador', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('ecuador')" onclick="selectCountry('ecuador')" />
+
+            <!-- 14. BRAZIL -->
+            <path id="geo-brazil" class="map-country-zone"
+                  d="M 278,262 L 318,250 L 372,278 L 358,348 L 324,352 L 295,316 L 286,280 Z"
+                  onmouseenter="hoverCountry('brazil', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('brazil')" onclick="selectCountry('brazil')" />
+
+            <!-- 15. MAURITIUS -->
+            <circle id="geo-mauritius" class="map-country-zone" cx="658" cy="324" r="5"
+                    onmouseenter="hoverCountry('mauritius', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('mauritius')" onclick="selectCountry('mauritius')" />
+          </g>
+
+          <!-- TARGET COUNTRY FLAG PINS & LABELS -->
+          <g id="flag-pins-layer">
+            
+            <!-- PORTUGAL -->
+            <g class="map-pin-flag" id="pin-portugal" transform="translate(442, 142)"
+               onmouseenter="hoverCountry('portugal', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('portugal')" onclick="selectCountry('portugal')">
+              <rect class="pin-bg" x="-2" y="-2" width="62" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-portugal" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">葡萄牙 D8</text>
+            </g>
+
+            <!-- SPAIN -->
+            <g class="map-pin-flag" id="pin-spain" transform="translate(488, 148)"
+               onmouseenter="hoverCountry('spain', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('spain')" onclick="selectCountry('spain')">
+              <rect class="pin-bg" x="-2" y="-2" width="56" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-spain" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">西班牙</text>
+            </g>
+
+            <!-- ITALY -->
+            <g class="map-pin-flag" id="pin-italy" transform="translate(532, 134)"
+               onmouseenter="hoverCountry('italy', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('italy')" onclick="selectCountry('italy')">
+              <rect class="pin-bg" x="-2" y="-2" width="56" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-italy" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">意大利</text>
+            </g>
+
+            <!-- CROATIA -->
+            <g class="map-pin-flag" id="pin-croatia" transform="translate(544, 122)"
+               onmouseenter="hoverCountry('croatia', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('croatia')" onclick="selectCountry('croatia')">
+              <rect class="pin-bg" x="-2" y="-2" width="62" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-croatia" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">克罗地亚</text>
+            </g>
+
+            <!-- GREECE -->
+            <g class="map-pin-flag" id="pin-greece" transform="translate(564, 150)"
+               onmouseenter="hoverCountry('greece', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('greece')" onclick="selectCountry('greece')">
+              <rect class="pin-bg" x="-2" y="-2" width="50" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-greece" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">希腊</text>
+            </g>
+
+            <!-- ALBANIA -->
+            <g class="map-pin-flag" id="pin-albania" transform="translate(554, 138)"
+               onmouseenter="hoverCountry('albania', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('albania')" onclick="selectCountry('albania')">
+              <rect class="pin-bg" x="-2" y="-2" width="68" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-albania" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">阿尔巴尼亚</text>
+            </g>
+
+            <!-- THAILAND -->
+            <g class="map-pin-flag" id="pin-thailand" transform="translate(774, 214)"
+               onmouseenter="hoverCountry('thailand', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('thailand')" onclick="selectCountry('thailand')">
+              <rect class="pin-bg" x="-2" y="-2" width="64" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-thailand" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">泰国 DTV</text>
+            </g>
+
+            <!-- MALAYSIA -->
+            <g class="map-pin-flag" id="pin-malaysia" transform="translate(782, 248)"
+               onmouseenter="hoverCountry('malaysia', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('malaysia')" onclick="selectCountry('malaysia')">
+              <rect class="pin-bg" x="-2" y="-2" width="62" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-malaysia" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">马来西亚</text>
+            </g>
+
+            <!-- SRI LANKA -->
+            <g class="map-pin-flag" id="pin-srilanka" transform="translate(720, 232)"
+               onmouseenter="hoverCountry('srilanka', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('srilanka')" onclick="selectCountry('srilanka')">
+              <rect class="pin-bg" x="-2" y="-2" width="62" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-srilanka" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">斯里兰卡</text>
+            </g>
+
+            <!-- MEXICO -->
+            <g class="map-pin-flag" id="pin-mexico" transform="translate(200, 192)"
+               onmouseenter="hoverCountry('mexico', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('mexico')" onclick="selectCountry('mexico')">
+              <rect class="pin-bg" x="-2" y="-2" width="70" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-mexico" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">墨西哥临时</text>
+            </g>
+
+            <!-- COSTA RICA -->
+            <g class="map-pin-flag" id="pin-costarica" transform="translate(262, 230)"
+               onmouseenter="hoverCountry('costarica', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('costarica')" onclick="selectCountry('costarica')">
+              <rect class="pin-bg" x="-2" y="-2" width="68" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-costarica" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">哥斯达黎加</text>
+            </g>
+
+            <!-- COLOMBIA -->
+            <g class="map-pin-flag" id="pin-colombia" transform="translate(294, 244)"
+               onmouseenter="hoverCountry('colombia', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('colombia')" onclick="selectCountry('colombia')">
+              <rect class="pin-bg" x="-2" y="-2" width="62" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-colombia" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">哥伦比亚</text>
+            </g>
+
+            <!-- ECUADOR -->
+            <g class="map-pin-flag" id="pin-ecuador" transform="translate(260, 266)"
+               onmouseenter="hoverCountry('ecuador', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('ecuador')" onclick="selectCountry('ecuador')">
+              <rect class="pin-bg" x="-2" y="-2" width="62" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-ecuador" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">厄瓜多尔</text>
+            </g>
+
+            <!-- BRAZIL -->
+            <g class="map-pin-flag" id="pin-brazil" transform="translate(344, 296)"
+               onmouseenter="hoverCountry('brazil', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('brazil')" onclick="selectCountry('brazil')">
+              <rect class="pin-bg" x="-2" y="-2" width="54" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-brazil" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">巴西</text>
+            </g>
+
+            <!-- MAURITIUS -->
+            <g class="map-pin-flag" id="pin-mauritius" transform="translate(650, 310)"
+               onmouseenter="hoverCountry('mauritius', event)" onmousemove="moveTooltip(event)" onmouseleave="leaveCountry('mauritius')" onclick="selectCountry('mauritius')">
+              <rect class="pin-bg" x="-2" y="-2" width="62" height="15" fill="#FAF6F0" stroke="#1A1A1A" stroke-width="0.9" rx="1.5" />
+              <use href="#flag-mauritius" x="0" y="0" width="16" height="11" />
+              <text x="19" y="8.5" font-family="'IBM Plex Sans', sans-serif" font-size="7.5" font-weight="600" fill="#1A1A1A">毛里求斯</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+
+      <!-- Criteria Classifier (Tabs) -->
+      <div class="border-t border-b border-ink py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <span class="font-serif-title font-bold text-[#1A1A1A]">按财务门槛速查：</span>
+        <div class="flex flex-wrap gap-1.5">
+          <button onclick="filterByBudget('all')" class="crit-btn px-2 py-0.5 border border-ink bg-[#1A1A1A] text-white">全部标准</button>
+          <button onclick="filterByBudget('deposit')" class="crit-btn px-2 py-0.5 border border-ink bg-[#FAF6F0] hover:bg-[#E8E2D5] text-[#1A1A1A]">仅凭存款 / 无月薪</button>
+          <button onclick="filterByBudget('low')" class="crit-btn px-2 py-0.5 border border-ink bg-[#FAF6F0] hover:bg-[#E8E2D5] text-[#1A1A1A]">&le; $1,500/月</button>
+          <button onclick="filterByBudget('mid')" class="crit-btn px-2 py-0.5 border border-ink bg-[#FAF6F0] hover:bg-[#E8E2D5] text-[#1A1A1A]">$1,500–2,800/月</button>
+          <button onclick="filterByBudget('high')" class="crit-btn px-2 py-0.5 border border-ink bg-[#FAF6F0] hover:bg-[#E8E2D5] text-[#1A1A1A]">&ge; €3,000/月 (欧陆大国)</button>
+          <button onclick="filterByBudget('pr')" class="crit-btn px-2 py-0.5 border border-[#B23A2F] text-[#B23A2F] bg-[#FAF6F0] hover:bg-[#F0E1DE]">有确定永居路径</button>
+        </div>
+      </div>
+
+      <!-- Physical Index Cards Catalog (WITH WATERMARK NATIONAL FLAGS) -->
+      <div>
+        <div class="flex items-center justify-between text-xs text-[#5C5850] mb-2 font-mono">
+          <span>CATALOGUE OF VISAS / 卡片柜索引 (含半透明国旗水印)</span>
+          <span id="filtered-count">显示 15 卷档</span>
+        </div>
+        <div id="index-cards-container" class="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <!-- Populated by JS with SVG Watermarks -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT COLUMN: DETAILED PRINT DOSSIER (Cols 8-12) -->
+    <section class="lg:col-span-5 flex flex-col bg-[#FAF6F0] border-l border-ink p-6 overflow-y-auto max-h-[calc(100vh-145px)]">
+      <div id="dossier-pane" class="space-y-6">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- QUICK ASSESSMENT MODAL -->
+  <div id="quiz-modal" class="fixed inset-0 z-50 bg-[#1A1A1A]/70 hidden items-center justify-center p-4">
+    <div class="bg-[#FAF6F0] border-2 border-ink max-w-lg w-full p-6 shadow-[6px_6px_0px_rgba(26,26,26,1)] space-y-5">
+      <div class="border-b-2 border-ink pb-3 flex items-start justify-between">
+        <div>
+          <span class="stamp-badge text-[10px] px-1.5 py-0.2 bg-[#F0E1DE]">FORM 2026-N</span>
+          <h3 class="text-xl font-serif-title font-bold text-[#1A1A1A] mt-1">数字游民居留通道快速核对表</h3>
+          <p class="text-xs text-[#5C5850]">按财务状况与定居目标，定位最稳妥的备选国度</p>
+        </div>
+        <button onclick="closeQuizModal()" class="text-xl font-mono text-[#1A1A1A] hover:text-[#B23A2F]">&times;</button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div>
+          <label class="block font-serif-title font-bold text-[#1A1A1A] mb-1">项一：远程稳定进账情况（或现有可用存款储备）？</label>
+          <select id="q-income" class="w-full bg-[#F4EFE6] border border-ink p-2 text-[#1A1A1A] font-medium outline-none">
+            <option value="deposit_only">以存款为主（有等值 10-30 万人民币结存），暂无固定高额月薪流水</option>
+            <option value="under_1500">月薪流水在 $1,000–$1,500（约 7,000–11,000 RMB）区间</option>
+            <option value="under_2500">月薪流水在 $1,500–$2,800（约 11,000–20,000 RMB）区间</option>
+            <option value="above_3000">月薪流水在 €3,000–$4,500+（约 23,000–35,000+ RMB）高档</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-serif-title font-bold text-[#1A1A1A] mb-1">项二：最核心之现实诉求？</label>
+          <select id="q-goal" class="w-full bg-[#F4EFE6] border border-ink p-2 text-[#1A1A1A] font-medium outline-none">
+            <option value="lifestyle">成本低、气候舒适、生活简单（先合法长居，避开繁杂程序）</option>
+            <option value="schengen">需要畅行欧洲申根区、体验欧陆生活</option>
+            <option value="pr">以远程身份作为跳板，真实以拿到永久居留（绿卡）或护照为目的</option>
+            <option value="tax">规避高额个税、享有法定免税或属地税优</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-serif-title font-bold text-[#1A1A1A] mb-1">项三：家庭成员随行计划？</label>
+          <select id="q-family" class="w-full bg-[#F4EFE6] border border-ink p-2 text-[#1A1A1A] font-medium outline-none">
+            <option value="solo">单人独行，无随行家属门槛加码</option>
+            <option value="family">携配偶及未成年子女（需考虑附加资产上浮比例）</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-ink flex justify-end gap-2 text-xs">
+        <button onclick="closeQuizModal()" class="px-4 py-2 border border-ink bg-[#FAF6F0] hover:bg-[#E8E2D5] text-[#1A1A1A]">关闭</button>
+        <button onclick="execMatch()" class="px-4 py-2 border border-[#B23A2F] bg-[#B23A2F] text-white font-bold hover:bg-[#8F2E25]">生成核验判词</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Complete Dataset for 15 Countries
+    const DOSSIER_DATA = {
+      portugal: {
+        id: "portugal",
+        code: "PRT-D8",
+        flagId: "flag-portugal",
+        country: "葡萄牙 (Portugal)",
+        visaTitle: "D8 远程工作者居留签证 (Visto D8)",
+        officialClass: "临时停留签证 (E-Visto) / 居留许可 (Autorização de Residência)",
+        region: "europe",
+        tag: "欧陆核心 · 5年入籍跳板",
+        stamp: "HIGH DEMAND",
+        thresholdUsd: 3950,
+        thresholdFormatted: "约 €3,680 / 月 (2026年约为葡最低工资4倍)",
+        depositRule: "活期储蓄替代：需存入葡国本地银行。单人通常建议备足不少于 €45,000 (等同约12个月法定门槛) 作为充分经济自足证明。",
+        durationRule: "① 临时停留签：最长1年（多次往返，不可境内转居留卡）；② 居留签证：首发2年居留卡，其后可续签3年。住满5年具备转永居或申请国籍资格。",
+        taxRule: "旧制 NHR 优惠税率已截停；2026 适用新版 NHR 2.0 (IFS)，主要惠及高新科研，普通远程白领多直接纳入普通累进个税（边际税率最高可达48%）。住满183天为法定税务居民。",
+        prRule: "★★★★★ 法律路径极其明确。合法居留满 5 年，出具基础葡语 A2 水平证书且无严重刑案记录，即可递交永居或护照申请。",
+        reviewTime: "3 至 8 个月 (国内领馆预审 60-90 天，入境后换卡等待 AIMA 预约较为漫长)",
+        verdict: "D8之盛名，全在其欧盟居留与相对低语言要求的5年护照路径。绝非省心省钱之选，前期税号、开户、租房沉没成本不可轻忽。",
+        pros: [
+          "持有居留卡可在 29 个申根国家自由穿梭通行；",
+          "入籍考试仅需葡语 A2（欧标初阶），在欧洲各主流移民国中语言门槛相对宽松；",
+          "社会治安良好，里斯本、波尔图与马德拉群岛有极具规模的英语游民社区。"
+        ],
+        cons: [
+          "【AIMA 机构效率积压】葡萄牙移民局换发居留卡排期延宕，未取得正式实体卡前离境存在行程受限隐患；",
+          "【前置租房与税号死锁】递签必须出具在葡国税务局登记的 1 年期长租合同与 NIF 本地税号，人未入境已产生数千欧元开销；",
+          "【税负陡峭】若无法切入科研免税清单，高额境外所得面临极重阶梯个人所得税。"
+        ],
+        papers: [
+          "与境外雇主签署之正式劳动合同，或自由职业者多份长期技术服务协议",
+          "出具最近 6 个月银行连续进账对账单（体现稳定进账达到 €3,680/月）",
+          "葡萄牙纳税人识别号 (NIF) 与葡萄牙本地银行存折/对账单",
+          "经葡萄牙税务局（Finanças）备案之 1 年期正规房屋租赁契约",
+          "中国司法部门出具之无犯罪记录证明（海牙认证 Apostille + 葡语宣誓翻译）",
+          "保额不低于 €30,000 之全行程医疗健康险保单"
+        ]
+      },
+
+      spain: {
+        id: "spain",
+        code: "ESP-DNV",
+        flagId: "flag-spain",
+        country: "西班牙 (Spain)",
+        visaTitle: "初创法案数字游民签证 (Visado Nómada Digital)",
+        officialClass: "Ley de Startups 专设远程工作者居留许可",
+        region: "europe",
+        tag: "境内直申3年 · 贝克汉姆平税",
+        stamp: "RECOMMENDED",
+        thresholdUsd: 3100,
+        thresholdFormatted: "约 €2,850 / 月 (2026年对应西班牙最低跨行业薪资 SMI 之 200%)",
+        depositRule: "侧重查验过往3个月及未来合同保障之稳定现金流；单纯静态存款除非数额极大（超€60,000）且能佐证生息，否则不宜孤立使用。",
+        durationRule: "境内以旅游身份直接向大型企业局 (UGE) 递交可直领 3 年居留卡（续签2年）；若通过国内领馆则发 1 年签证。累计满5年可转永久居留。",
+        taxRule: "可申请适用「贝克汉姆法案」（特殊外派税制）：在西居留前 5+1 年内，年入 60 万欧元以内按 24% 单一扁平税率征收，显著低于普通累进税。",
+        prRule: "★★★★☆ 连续在西合法居住满 5 年可申请永久居留（长期居留）。但入籍对非前西属殖民地公民需满 10 年。",
+        reviewTime: "1 至 2 个月 (境内 UGE 电子通道审批法定约 20 个工作日，效率远优于葡国)",
+        verdict: "当前西欧申根同类政策中制度设计最成熟、审批效率最高之选择。尤其推荐持申根旅游签直接入境申报 3 年居留卡。",
+        pros: [
+          "可直接免除驻华领馆繁冗预约，旅游入境直接获批 3 年期实体卡；",
+          "贝克汉姆税收制度为高收入远程工作者提供合规封顶在 24% 的优厚待遇；",
+          "巴塞罗那、马德里、瓦伦西亚及加那利群岛游民基础设施成熟完善。"
+        ],
+        cons: [
+          "【雇佣实体门槛】受雇之境外公司必须成立满 1 年以上，且劳动关系须存续至少 3 个月；",
+          "【学历或行业年资】申请人须具备大学专科/本科以上学历，或能出具 3 年以上同一技术领域正规履历佐证；",
+          "【双边社保协调】全职雇员需出具社保互免证明（实操较复杂，自雇自由职业者则可直缴西班牙 RETA 社保）。"
+        ],
+        papers: [
+          "境外雇主全权许可远程办公之授权信函（需声明职务性质完全无需现场出席）",
+          "高等教育学历学位证书（完成海牙认证及西班牙语官方宣誓翻译）或3年资历证明",
+          "最近 3 个月工资对账单及加盖公章之银行流水明细",
+          "雇主公司注册成立证明（商业登记簿，证明存续已满12个月）",
+          "全额无免赔额之西班牙合规私人医疗健康保单 (Sin Copago)",
+          "海牙认证之官方无犯罪记录报告"
+        ]
+      },
+
+      italy: {
+        id: "italy",
+        code: "ITA-DNV",
+        flagId: "flag-italy",
+        country: "意大利 (Italy)",
+        visaTitle: "高度专业化数字游民签证 (Nomadi Digitali)",
+        officialClass: "高技能远程非从属性工作居留 (Lavoro Autonomo / Subordinato)",
+        region: "europe",
+        tag: "年入标准适中 · 严查高技能文凭",
+        stamp: "HIGH SKILLED",
+        thresholdUsd: 2750,
+        thresholdFormatted: "年入约 €28,000–30,000 (折合每月约 €2,400–2,500)",
+        depositRule: "必须展现上一年度完整的报税证明及银行入账流水；纯存款不被承认为经济自足手段。",
+        durationRule: "初次核发 1 年期居留许可 (Permesso di Soggiorno)，每年可于意境内警局 (Questura) 申请续期。满5年可转欧盟长居。",
+        taxRule: "自雇自由职业者可申请按统包制 Regime Forfettario 纳税（年入 8.5 万欧以内，新业务前5年享 5% 或 15% 优惠税率）。",
+        prRule: "★★★★☆ 连续在意大利合法居留满 5 年，通过意语 A2 语言测验，可申领欧盟长期居留许可证。",
+        reviewTime: "2 至 4 个月",
+        verdict: "收入门槛较葡萄牙、希腊友好，但其法案锚定欧盟蓝卡标准，要求「高度专业化（大学本科学历或高级资格）」，适合受过良好教育之独立顾问与软件工程师。",
+        pros: [
+          "月入要求（约 €2,500）在申根大国中偏于理性，年薪 25 万 RMB 上下即可切中；",
+          "自由职业者统包税率极低，对独立自雇者而言节税效果出众；",
+          "地中海生活方式、深厚历史文化氛围与高水准公立医疗环境。"
+        ],
+        cons: [
+          "【严审高技能凭证】必须具备至少三年制高等教育文凭，或国家认证之高级专业从业资质证书；",
+          "【半年先行履约期】要求证明此前已从事该类远程工作或服务该客户不少于 6 个月；",
+          "【正式租约登记】领馆面签前需备妥在意大利境内合规之房屋长租协议或接待声明。"
+        ],
+        papers: [
+          "大学学历证书并经领事合法化及价值声明（Dichiarazione di Valore）或海牙认证",
+          "近半年来有效之境外雇佣合同或自由职业长期供稿、技术外包协议",
+          "上年度纳税证明（完税凭据）与对应银行流水账单",
+          "符合地方卫生标准的意大利境内住所租赁契约（Agenzia delle Entrate 登记）",
+          "覆盖全意境内的医疗保险保单及无犯罪记录双认证件"
+        ]
+      },
+
+      croatia: {
+        id: "croatia",
+        code: "HRV-DNP",
+        flagId: "flag-croatia",
+        country: "克罗地亚 (Croatia)",
+        visaTitle: "数字游民临时居留许可 (Temporary Stay for Digital Nomads)",
+        officialClass: "非移民类临时居留 (Temporary Stay)",
+        region: "europe",
+        tag: "法定义务免税 · 1年限额不可连签",
+        stamp: "ZERO TAX",
+        thresholdUsd: 3000,
+        thresholdFormatted: "约 €2,800–3,200 / 月 (按克国平均净工资2.5倍动态换算)",
+        depositRule: "完全支持纯存款替代：提供 12 个月保障金（约 €34,000–38,000 银行存款资信证明）即可获准。",
+        durationRule: "最长发放 12 个月。期满后【严禁直接在境内续签】，必须离境（或改换其他居留事由）至少等待 6 个月方可重新申请。",
+        taxRule: "【极核心优势】：克罗地亚税法第 12 条明确裁定，持该游民许可在境内居留期间，源于境外的远程劳动收益完全免征克罗地亚个人所得税（0% Tax）。",
+        prRule: "☆☆☆☆☆ 纯非移民临时停留，时间不计入克罗地亚或欧盟长期居留累积年限。",
+        reviewTime: "1 至 2 个月",
+        verdict: "极佳的欧洲申根度假与临时合规避税跳板，适宜旅居 1 年深度体验亚得里亚海，切忌抱有移民永居幻想。",
+        pros: [
+          "现已正式成为申根区成员，持居住证明自由通行申根全境；",
+          "欧洲极为罕有的境外远程收入法定 0% 免税政策，无财务合规后顾之忧；",
+          "斯普利特、杜布罗夫尼克与萨格勒布自然环境极美，夏日航海氛围浓厚。"
+        ],
+        cons: [
+          "【硬性冷却期】居留满 1 年必须走人，并有 6 个月离境冷却期，无法无缝常驻；",
+          "【旺季房租高涨】沿海主要城镇在每年 6-9 月旅游旺季房租大幅上涨，长租不易。"
+        ],
+        papers: [
+          "雇主远程劳动合同或自营公司章程与登记证明文件",
+          "近 3 个月银行对账单（体现达到月入标准或总存款达到 €3.4万+ 证明）",
+          "经海牙认证之无犯罪记录证明书",
+          "克罗地亚境内住宿预定确认书或租房协议（附房东 OIB 税号）",
+          "覆盖在克全周期的合规健康医疗险保单"
+        ]
+      },
+
+      greece: {
+        id: "greece",
+        code: "GRC-DNV",
+        flagId: "flag-greece",
+        country: "希腊 (Greece)",
+        visaTitle: "数字游民签证及居留卡 (Law 4825/2021)",
+        officialClass: "第三国远程专业工作者长期居留",
+        region: "europe",
+        tag: "爱琴海定居 · 前7年税减50%",
+        stamp: "NET INCOME",
+        thresholdUsd: 3800,
+        thresholdFormatted: "€3,500 / 月 (必须为税后净收入！若随行配偶 +20%，未成年子女每人 +15%)",
+        depositRule: "主要核实持续现金流。若以存款佐证，通常需存入高额定期保证金并附加持续获利依据。",
+        durationRule: "入境前办 1 年签证，入境后向移民局申换 2 年居留许可（可按 2 年为周期无限次申请展期）。",
+        taxRule: "若在希腊转为常住税务居民并承诺留驻满 2 年，可依法享受前 7 年个人所得税全额减半（50% Tax Exemption）特殊优惠。",
+        prRule: "★★★★☆ 连续在希腊合法居住满 5 年，符合居留天数要求并通过希腊语及历史常识测试，可转欧盟长期居留。",
+        reviewTime: "2 至 3 个月",
+        verdict: "南欧人文环境极佳，但其门槛要求为「税后净到手」€3,500，带家庭门槛更升至 €4,500+，实属中产偏上家庭之选项。",
+        pros: [
+          "居留卡每 2 年续期一次，家庭成员可一同申请，申根 29 国畅行；",
+          "前 7 年所得税减半政策，对于高利润自雇人士具备相当吸引力；",
+          "雅典及克里特岛生活成本较西欧核心国家明显亲民。"
+        ],
+        cons: [
+          "【税后净额核算严】€3,500 必须是税后，折合税前年薪需在 40-50 万人民币以上；",
+          "【行政文书繁复】地方移民外事部门电子化程度有待提升，多需委托希腊本地律师跟进。"
+        ],
+        papers: [
+          "境外雇主合同明确标明全远程性质及税后实发薪金数额",
+          "近 6 个月银行连续进账流水明细（体现每月 €3,500+ 稳定划入）",
+          "希腊税务登记系统（Taxisnet）备案之正式住房租赁合约",
+          "海牙认证之主申及家属无犯罪记录公证书",
+          "覆盖在希腊境内的国际综合医疗保险"
+        ]
+      },
+
+      albania: {
+        id: "albania",
+        code: "ALB-LU",
+        flagId: "flag-albania",
+        country: "阿尔巴尼亚 (Albania)",
+        visaTitle: "数字游民唯一居留许可 (Leje Unike për Nomadi Dixhital)",
+        officialClass: "巴尔干唯一工作居住许可 (Law on Foreigners)",
+        region: "europe",
+        tag: "欧洲门槛底线 · 申根倒计时重置点",
+        stamp: "BUDGET",
+        thresholdUsd: 800,
+        thresholdFormatted: "约 $750–800 / 月 (年收入约 $9,000–10,000 即可被采信)",
+        depositRule: "银行账户存有 $10,000 上下存款资信，即可满足审核基本自足标准。",
+        durationRule: "首发 1 年有效，在境内可逐年展期最长至 5 年。满5年可申请长期永久居留。",
+        taxRule: "前几年通常享受极大幅度境外所得免税期，日常物价为地中海周边极低梯次。",
+        prRule: "★★★☆☆ 连续居住满 5 年可获永久居留，但阿尔巴尼亚暂非欧盟与申根成员国，身份含金量有限。",
+        reviewTime: "3 至 6 周",
+        verdict: "欧洲边缘的低成本避风港。非申根国意味着不可用来免签欧陆，但恰好是申根 90/180 天受限者极佳的「洗签证」过渡据点。",
+        pros: [
+          "月入门槛不到一千美元，堪称欧洲地界最低门槛合法长期居留之一；",
+          "阿尔巴尼亚里维埃拉海岸线优美，夏季生活开销仅为希腊、意大利的三分之一；",
+          "政府积极推动数字化入欧，e-Albania 线上递交流程通畅。"
+        ],
+        cons: [
+          "【非申根成员】去往西班牙、葡萄牙、法国等依然需要办理申根旅游签证；",
+          "【基建发展中】地拉那以外的城镇冬季供暖与电力网络偶尔存在波动。"
+        ],
+        papers: [
+          "境外有效劳务雇佣证明或稳定远程服务外包协议",
+          "过去 6 个月个人银行入账账单（年计等值过万美元）",
+          "阿尔巴尼亚境内合法租赁住址登记文件",
+          "无犯罪记录报告公证书与合规健康保单"
+        ]
+      },
+
+      thailand: {
+        id: "thailand",
+        code: "THA-DTV",
+        flagId: "flag-thailand",
+        country: "泰国 (Thailand)",
+        visaTitle: "DTV 目的地泰国签证 (Destination Thailand Visa)",
+        officialClass: "长期停留多往非移民特许签 (5-Year Multiple Entry)",
+        region: "asia",
+        tag: "零月薪硬杠 · 50万泰铢存款即办",
+        stamp: "GLOBAL HIT",
+        thresholdUsd: 0,
+        thresholdFormatted: "无月薪硬性指标！仅需出具 50 万泰铢存款 (约 $14,500 / 10.5万 RMB)",
+        depositRule: "完全依靠存款！个人名下账户存足 50 万泰铢（或等额外币）并开具近1个月内资信证明即可。",
+        durationRule: "签证 5 年有效多次往返。每次入境最长可驻留 180 天，在泰境内移民局可再延期 1 次 180 天（单次实质可居留整整 1 年）。",
+        taxRule: "历年住满 180 天判定为税务居民。境外收入若在发生之次年之后汇入，或不调入泰境本土银行，在实操层面拥有成熟节税空间。",
+        prRule: "☆☆☆☆☆ 非移民长期访问签，无论在泰居留多少年，均无法律途径转为永居或入籍。",
+        reviewTime: "5 至 15 个工作日",
+        verdict: "当前全球游民领域性价比最高之现象级通道。免去租房开户与高额流水枷锁，适合首发试水、热爱热带气候之游民。",
+        pros: [
+          "政府工本费极低（约 10,000 泰铢，合 2,000 余元人民币），5年有效；",
+          "不卡月薪、不卡学历文凭、无需前置当地租房合同；",
+          "清迈、曼谷、普吉咖啡馆与共享办公网络密集，生活成本极其舒展。"
+        ],
+        cons: [
+          "【非移民属性】仅属居留特许，不积累任何绿卡与永居时间；",
+          "【严禁本地受雇】绝对禁止受雇于泰国本地商业实体或抢占本土就业配额；",
+          "【软实力佐证】部分领区需准备较为详尽的线上业务作品集或远程聘书。"
+        ],
+        papers: [
+          "名下不少于 500,000 泰铢（或等值美元/人民币）的银行活期资金结存证明",
+          "境外公司出具之远程办公派遣证明信，或自由职业者线上经营作品集及客户合同",
+          "主申请人有效因私护照扫描件及标准免冠电子照片",
+          "泰王国官方电子签证申请表 (E-Visa Portal)"
+        ]
+      },
+
+      malaysia: {
+        id: "malaysia",
+        code: "MYS-DER",
+        flagId: "flag-malaysia",
+        country: "马来西亚 (Malaysia)",
+        visaTitle: "DE Rantau 游民通行证 (DE Rantau Nomad Pass)",
+        officialClass: "MDEC 主导专业外籍游民通行居留凭证",
+        region: "asia",
+        tag: "中英双语 · 属地税制免税",
+        stamp: "COMFORT",
+        thresholdUsd: 2000,
+        thresholdFormatted: "年入 $24,000 (约 $2,000 / 月，非数码IT类约为 $18,000 / 年)",
+        depositRule: "必须审核最近 3 个月以上真实入账与完税凭单，单纯静态资产不可豁免流水。",
+        durationRule: "首发 3 至 12 个月，可在马境内申请续期 12 个月，法定最长连续居留期限为 24 个月。",
+        taxRule: "实行属地税制（Territorial Tax System），由境外产生之远程工资与技术收益，合规汇入通常完全不征收马来西亚本土个税。",
+        prRule: "☆☆☆☆☆ 阶段性人才通行证，不计入马来西亚永久居留（Red IC / PR）计算周期。",
+        reviewTime: "4 至 8 周",
+        verdict: "华人生活适应成本最低之国度。英语、华语无缝切换，医疗设施顶尖，适合带家属做中短期 1-2 年舒适过渡。",
+        pros: [
+          "吉隆坡、槟城拥有极高品质的居住公寓与国际学校，文化隔阂几乎为零；",
+          "境外收入属地税制豁免，免去税务申报两头受困之顾虑；",
+          "配偶与子女随同申请程序简便透明。"
+        ],
+        cons: [
+          "【2年期满封顶】24 个月期满后不能无限续签，必须更换其他签证或出境离境；",
+          "【早期IT偏好】名义上已向全行业开放，但审批中对技术开发、数字设计类专业依然更具倾向性。"
+        ],
+        papers: [
+          "现存有效之全职远程雇佣合同（期限不少于3个月）或多份自由职业服务协议",
+          "最近 3 个月个人纳税证明及银行对口进账凭单",
+          "详细个人简历、专业作品链接（GitHub / 个人技术主页）",
+          "覆盖在马期间的合格商业医疗保单",
+          "主申及随同家属整本护照扫描认证件"
+        ]
+      },
+
+      srilanka: {
+        id: "srilanka",
+        code: "LKA-DNV",
+        flagId: "flag-srilanka",
+        country: "斯里兰卡 (Sri Lanka)",
+        visaTitle: "数字游民居留签证 (Digital Nomad Visa)",
+        officialClass: "长期商务与旅居签证",
+        region: "asia",
+        tag: "冲浪圣地 · 极低物价",
+        stamp: "TROPICAL",
+        thresholdUsd: 2000,
+        thresholdFormatted: "个人主申 $2,000 / 月；携带家属为 $3,000 / 月",
+        depositRule: "资金需展示能通过正规国际银行向斯里兰卡境内合规转移与消费之能力。",
+        durationRule: "首签 1 年有效，期满前可在斯里兰卡移民局逐年申请续办，最长可达 3 年。",
+        taxRule: "仅对斯境内本土产生之营业劳务所得计税，纯境外远程收入不纳入斯里兰卡本地个税征缴范围。",
+        prRule: "☆☆☆☆☆ 无任何永久居留或归化路径。",
+        reviewTime: "2 至 4 周",
+        verdict: "南亚海岛性价比之选，尤其契合冲浪客与自然疗愈型创作者，月开销千元美金即可获得带泳池的花园独栋体验。",
+        pros: [
+          "西南海岸（Weligama, Ahangama）聚集大量欧美年轻科技游民与冲浪爱好者；",
+          "生活必需品成本极其低廉，人工服务费亲民；",
+          "热带海洋、高山茶园与野生动物保护区生态无与伦比。"
+        ],
+        cons: [
+          "【电力与宽带偶有波动】虽比往年显著改善，但偏远海滩依然偶现停电，需常备大容量热点；",
+          "【南亚办事节奏】行政手续相对随和拖沓，需留出充裕时间余量。"
+        ],
+        papers: [
+          "远程雇佣书或线上技术合作长期协议",
+          "近 6 个月银行连续进账单（月均 $2,000+）",
+          "在斯里兰卡境内的酒店或长期别墅租房订单",
+          "无犯罪记录证明书与国际旅行意外伤害医疗险"
+        ]
+      },
+
+      mexico: {
+        id: "mexico",
+        code: "MEX-TR",
+        flagId: "flag-mexico",
+        country: "墨西哥 (Mexico)",
+        visaTitle: "临时居民签证 (Residente Temporal)",
+        officialClass: "经济自足类临时居留 (Solvencia Económica)",
+        region: "latam",
+        tag: "北美时区 · 满4年直接转终身绿卡",
+        stamp: "PR GOLDEN TIER",
+        thresholdUsd: 2500,
+        thresholdFormatted: "各领馆口径有差异，常见约 $2,500–$4,300 / 月，或 存款 $45,000–$70,000",
+        depositRule: "过去 12 个月银行账户每月平均结存保持在约 5-7 万美元即可直接以存款人身份获签！",
+        durationRule: "首年发 1 年居留卡，其后可直接一次性续期 3 年（累计满 4 年）。满 4 年后无条件直接置换为永久居留卡（Residente Permanente）！",
+        taxRule: "若不申请墨西哥本土税号 RFC、不在墨境内从事劳务、仅在境外收款，通常不被判定为墨西哥课税居民，资产保全度极高。",
+        prRule: "★★★★★ 满 4 年无条件换永久绿卡。最关键在于：墨西哥绿卡终身有效，且【毫无移民监要求】（即便长期不在墨居住亦不吊销）。",
+        reviewTime: "1 至 2 个月",
+        verdict: "非专设游民签，却是全球远程白领眼中含金量最高的居留项目之一。4年换终身免移民监绿卡这一项，足以横扫多数欧洲鸡肋签证。",
+        pros: [
+          "满 4 年直接换终身绿卡，无后续移民监居住时间要求，进退自如；",
+          "与美加同属北美时区，直飞洛杉矶、休斯顿、纽约仅需数小时；",
+          "墨西哥城（CDMX）罗马区与孔德萨区拥有世界顶级的咖啡、艺术与游民社群。"
+        ],
+        cons: [
+          "【领事裁量口径差极大】不同驻华领馆（北京、上海、广州）及第三国领馆对金额计算标准波动较大；",
+          "【入境换卡排期】入境换卡 (Canje) 必须在 30 天内启动，个别移民局网点预约较为紧张。"
+        ],
+        papers: [
+          "最近 6 个月银行进账流水账单（达到领馆法定月薪倍数）或 最近 12 个月持续达标的投资存款对账单",
+          "远程雇主雇佣派遣证明公函（写明岗位、工作时长及报酬）",
+          "有效护照原件与清晰复印件",
+          "墨西哥使领馆规范申请表及白底证件照片",
+          "入境后的 FMM 凭条与 INAMI 换卡税费收据"
+        ]
+      },
+
+      colombia: {
+        id: "colombia",
+        code: "COL-VV",
+        flagId: "flag-colombia",
+        country: "哥伦比亚 (Colombia)",
+        visaTitle: "V 类数字游民访客签证 (Visa V Nómadas Digitales)",
+        officialClass: "访客类长期许可 (Visitor Visa - Type V)",
+        region: "latam",
+        tag: "拉美低门槛代表 · 麦德林永春城",
+        stamp: "EASY ENTRY",
+        thresholdUsd: 1400,
+        thresholdFormatted: "约 175 倍哥法定最低日薪，折合约 $1,400 / 月 (约 1 万 RMB)",
+        depositRule: "若月入单月稍欠缺，可用过去 3 个月个人储蓄账户的充足沉淀资金补充印证。",
+        durationRule: "最长核发 2 年有效期。但需严格审阅标注：部分口径要求每个日历年内累计停留不超过 180 天。",
+        taxRule: "单一日历年内连续或累计停留少于 183 天，绝不触发哥伦比亚全球收入征税义务，极大规避财务合规成本。",
+        prRule: "★☆☆☆☆ V 类签证纯属访客类别，不直接作为 R 类（永久居留）的合法在留时间累加。",
+        reviewTime: "1 至 2 个月",
+        verdict: "南美游民圈入门首选。门槛极低，麦德林具备全拉美最完善的远程办公配套，物价亲民，但需时刻注重日常人身防范。",
+        pros: [
+          "月入门槛折合人民币仅一万元左右，材料要求平易近人；",
+          "麦德林被誉为全球数字游民大本营之一，气候宜人，咖啡文化繁荣；",
+          "单身游民每月 1,200 美元即可过上十分宽裕的生活。"
+        ],
+        cons: [
+          "【大城市治安隐患】麦德林与波哥大个别街区夜间存在治安隐患，需严格遵守常识，防范陌生社交软件陷阱；",
+          "【不可转永居】仅仅作为旅居工具，无法通往长期绿卡。"
+        ],
+        papers: [
+          "境外雇主信函（西语或英语），写明远程工作性质及薪资给付方式",
+          "最近 3 个月银行盖章月度账单（折合超过 175 倍法定最低工资）",
+          "西语撰写之自述意向陈述书（Motivation Letter）",
+          "在哥伦比亚全境有效的医疗健康与意外伤害保单",
+          "所有中文证件之正规西语翻译件与海牙认证"
+        ]
+      },
+
+      brazil: {
+        id: "brazil",
+        code: "BRA-XIV",
+        flagId: "flag-brazil",
+        country: "巴西 (Brazil)",
+        visaTitle: "VITEM XIV 数字游民临时居留签",
+        officialClass: "临时居留类别 (Visto Temporário XIV - Resolução 45)",
+        region: "latam",
+        tag: "纯存款替代 · 官方规则清爽",
+        stamp: "CLEAR CRITERIA",
+        thresholdUsd: 1500,
+        thresholdFormatted: "稳定月入 $1,500 / 月 (约 1.1万 RMB)，或出具存款 $18,000 (约 13万 RMB)",
+        depositRule: "只要个人账户在申请日前出具存有至少 18,000 美元（或等额外币）的资金证明，即可免除月入流水！",
+        durationRule: "首发 1 年有效，在巴西联邦警察局登记居留后，可再申请延期 1 年（累计最长 2 年）。",
+        taxRule: "在任意连续 12 个月内，于巴西境内住满 183 天，第 184 天起依法自动成为巴西税务居民，负有申报全球所得之义务。建议严格控制常驻周期。",
+        prRule: "★★☆☆☆ 游民签本身不直接转永居，但 2 年后若有本地投资设立或家庭婚姻关系，可转为永久身份。",
+        reviewTime: "3 至 6 周",
+        verdict: "规则极其透明的拉美大国项目，仅需 1.8 万美元存款即可拿下，适合热爱热带雨林、海滩冲浪及南美文化的游民朋友。",
+        pros: [
+          "政策条款白纸黑字：$1,500 月薪或 $18,000 存款二选一，毫无自由裁量模糊地带；",
+          "巴西物价整体性价比高，物产极度丰饶；",
+          "中巴经贸交往频繁，签证互信度高。"
+        ],
+        cons: [
+          "【183天税务雷区】停留超标将面临复杂的巴西所得税体系，需做好出入境日期排期；",
+          "【联邦警察登记】入境 90 天内需赴当地 Policia Federal 采集指纹并申领 CRNM 外国人身份证，大城市预约需及早排队。"
+        ],
+        papers: [
+          "境外受雇企业出具之完全远程办公授权声明信函",
+          "前 3 个月个人银行入账明细（体现 $1,500/月）或 18,000 美元有效银行存款资信证明",
+          "由属地公安局出具并完成海牙认证之无犯罪记录证明书",
+          "覆盖巴西境内全周期的健康医疗保险保单",
+          "往返机票预定单与在线填报之巴西签证申请凭执"
+        ]
+      },
+
+      costarica: {
+        id: "costarica",
+        code: "CRI-DNV",
+        flagId: "flag-costarica",
+        country: "哥斯达黎加 (Costa Rica)",
+        visaTitle: "远程工作者留居许可 (Estancia Trabajadores Remotos)",
+        officialClass: "专门非移民留居类别 (Ley 10008)",
+        region: "latam",
+        tag: "法定义务完全免税 · 美式生态",
+        stamp: "FULL EXEMPTION",
+        thresholdUsd: 3000,
+        thresholdFormatted: "个人主申 $3,000 / 月；若携带家属则上浮至 $4,000 / 月",
+        depositRule: "需调阅过去 12 个月连续且稳定的进账流水，通常不接受无流水的静态存款。",
+        durationRule: "初始发放 1 年期留居，只要在第一年内于境内居留满 180 天，即可顺畅再申请续办 1 年（累计2年）。",
+        taxRule: "国家法律明确免除哥斯达黎加个人所得税；且免征个人笔记本与电子设备入境关税。",
+        prRule: "★☆☆☆☆ 留居许可属于非移民身份，不可折算入申请永久居留（Residencia Permanente）所需年限。",
+        reviewTime: "1 至 2 个月",
+        verdict: "免税政策界定最干净利落的国家之一，生态环境极优越，适合月入在 2-3 万 RMB 以上、追求绿色纯净生活 (Pura Vida) 的资深远程工作者。",
+        pros: [
+          "国家法律白纸黑字豁免远程收入个人所得税，免去国际双重课税后顾之忧；",
+          "中美洲和平稳定之模范，政治开明，无常备军队，社会治安在拉美独占鳌头；",
+          "英语普及率极高，拥有极其繁茂的北美冲浪与科技游民社群。"
+        ],
+        cons: [
+          "【消费水平偏高】物价在中美洲名列前茅，优质街区租金与生活开销持平欧美二线城市；",
+          "【单人门槛略高】$3,000/月的硬性流水要求将初级从业者挡在门外。"
+        ],
+        papers: [
+          "过去 12 个月银行月度明细表（清晰展现每月进账不少于 $3,000）并经过官方认证",
+          "境外雇主出具之全远程办公许可公函，或自营企业执照与分红凭据",
+          "保额不低于 $50,000 的合规医疗健康保险保单",
+          "官方签证规费与安全保证金缴纳单据"
+        ]
+      },
+
+      ecuador: {
+        id: "ecuador",
+        code: "ECU-VN",
+        flagId: "flag-ecuador",
+        country: "厄瓜多尔 (Ecuador)",
+        visaTitle: "远程游民居留签证 (Visa Nómada)",
+        officialClass: "临时居留专项目录 (Residencia Temporal)",
+        region: "latam",
+        tag: "使用美元 · 满21个月即可申转永居",
+        stamp: "EASY PR TIER",
+        thresholdUsd: 1450,
+        thresholdFormatted: "约 3 倍厄法定统一基本工资 (SBU)，2026年约 $1,400–$1,500 / 月",
+        depositRule: "可用不低于 36 倍基本工资的长期储蓄资信（约 $17,000）作为辅助佐证材料。",
+        durationRule: "签发 2 年有效期，期满可再续期 2 年。连续合法居留满 21 个月即可依法直接申请永久居留（RP）！",
+        taxRule: "采用属地税制原则，仅对厄境内产生之商业与劳务收益征税，境外远程工作所得享有优厚免税待遇；且官方货币直接为美元。",
+        prRule: "★★★★☆ 转永久绿卡极快之捷径。持有临时居留满 21 个月，期间满足离境限制（年离境不超过90天），即可直接申请永久绿卡。",
+        reviewTime: "1 至 2 个月",
+        verdict: "被普遍忽视的南美宝藏定居跳板。直接使用美元（无汇率贬值之灾），门槛仅一千余刀，满 21 个月即可申请永久绿卡。",
+        pros: [
+          "官方法定货币即为美元（USD），资产计价清晰，彻底避免本币剧烈贬值风险；",
+          "昆卡（Cuenca）是全美洲著名的高原宜居之都，四季如春，欧美退休与游民聚落庞大；",
+          "21 个月转永居的制度安排，比绝大多数欧洲大国（通常需5年）更为迅速。"
+        ],
+        cons: [
+          "【转永居有移民监】若意在转永久居留，在临时居留前 2 年内每年离境不得超过 90 天；",
+          "【区域治安分化】个别沿海港口城镇治安动荡，日常居住强烈推荐安第斯高地之昆卡或基多安全街区。"
+        ],
+        papers: [
+          "境外雇佣合同或自营实体证明文件（需海牙认证与官方西语翻译）",
+          "近 3 个月个人银行账单流水（体现月入达到 3 倍最低工资）",
+          "由原籍国司法机关出具并经海牙认证之官方无犯罪记录",
+          "在厄瓜多尔全境有效的正规商业健康医疗保险单"
+        ]
+      },
+
+      mauritius: {
+        id: "mauritius",
+        code: "MUS-PV",
+        flagId: "flag-mauritius",
+        country: "毛里求斯 (Mauritius)",
+        visaTitle: "高级长期居留签证 (Premium Visa)",
+        officialClass: "非公民长期旅居居留许可",
+        region: "other",
+        tag: "政府申请费0元 · 极速出签",
+        stamp: "ZERO FEE",
+        thresholdUsd: 1500,
+        thresholdFormatted: "建议月入流水约 $1,500 / 月 (或备足等额存款)",
+        depositRule: "完全支持出具充足的银行活期资金结存单作为生活支撑凭据。",
+        durationRule: "签证 1 年有效，在期满前可在岛内移民局政务网站免费申请无缝延期。",
+        taxRule: "停留未满 183 天非税务居民；即使满 183 天，亦仅对转入毛里求斯本地账户之资金部分按属地考量征免，无资本利得税。",
+        prRule: "☆☆☆☆☆ 纯属长期访客通道，不积累永居或国籍年限。",
+        reviewTime: "48 小时 至 1 周",
+        verdict: "手续最简、成本最低（政府 0 元规费）的印度洋度假胜地，适合说走就走的避寒与放空，堪称欧洲中产之后花园。",
+        pros: [
+          "免收政府申请费！纯官方线上系统申请，数个工作日内电邮下发；",
+          "社会环境极其安定，非洲治安与政局最稳固之岛国，英法双语高度通行；",
+          "风筝冲浪胜地，海洋与沙滩生态在印度洋首屈一指。"
+        ],
+        cons: [
+          "【孤悬海外】往返中欧美干线航程较长，机票成本略高；",
+          "【进口物资偏贵】岛内生活日常消费依赖进口商品，西式日用品价格偏高。"
+        ],
+        papers: [
+          "有效因私护照扫描件及往返/续程国际机票预订单",
+          "境外工作证明函、客户业务合同或海外持股证明",
+          "近 3 个月银行对账单（体现月入 $1,500+ 或充足总存款储备）",
+          "毛里求斯境内长租合同或合规酒店长住预定确认函",
+          "全程旅行健康医疗保险凭据"
+        ]
+      }
+    };
+
+    // State Variables
+    let currentId = "portugal";
+    let activeReg = "all";
+    let activeBud = "all";
+
+    // Populate Cards Grid with Semi-Transparent National Flags
+    function renderIndexCards() {
+      const container = document.getElementById("index-cards-container");
+      container.innerHTML = "";
+
+      const keys = Object.keys(DOSSIER_DATA);
+      let count = 0;
+
+      keys.forEach(key => {
+        const item = DOSSIER_DATA[key];
+
+        // Region Filter
+        const matchRegion = (activeReg === "all") || (item.region === activeReg);
+
+        // Budget Filter
+        let matchBudget = true;
+        if (activeBud === "deposit") {
+          matchBudget = (item.thresholdUsd === 0 || item.id === "brazil" || item.id === "mexico" || item.id === "croatia");
+        } else if (activeBud === "low") {
+          matchBudget = (item.thresholdUsd > 0 && item.thresholdUsd <= 1500);
+        } else if (activeBud === "mid") {
+          matchBudget = (item.thresholdUsd > 1500 && item.thresholdUsd <= 2800);
+        } else if (activeBud === "high") {
+          matchBudget = (item.thresholdUsd >= 3000);
+        } else if (activeBud === "pr") {
+          matchBudget = item.prRule.includes("★★★★") || item.prRule.includes("★★★★★");
+        }
+
+        const isVisible = matchRegion && matchBudget;
+        if (isVisible) count++;
+
+        const isCurrent = (key === currentId);
+
+        const card = document.createElement("div");
+        card.id = `idx-card-${key}`;
+        card.className = `index-card p-3 cursor-pointer flex flex-col justify-between ${
+          !isVisible ? "hidden" : ""
+        } ${isCurrent ? "index-card-active" : ""}`;
+        
+        // Connect hover and click
+        card.onmouseenter = () => highlightCountryOnMap(key);
+        card.onmouseleave = () => unhighlightCountryOnMap(key);
+        card.onclick = () => selectCountry(key);
+
+        card.innerHTML = `
+          <!-- Semi-Transparent National Flag Watermark Background -->
+          <svg class="flag-watermark" viewBox="0 0 60 40">
+            <use href="#${item.flagId}" />
+          </svg>
+
+          <!-- Card Content -->
+          <div class="card-content">
+            <div class="flex items-center justify-between border-b border-ink-subtle pb-1 mb-1.5 text-[10px] font-mono text-[#5C5850]">
+              <span class="flex items-center gap-1.5">
+                <svg class="w-3.5 h-2.5 border border-[#1A1A1A]/40 shadow-xs" viewBox="0 0 60 40">
+                  <use href="#${item.flagId}" />
+                </svg>
+                <span>${item.code}</span>
+              </span>
+              <span class="font-bold text-[#1A1A1A]">${item.thresholdUsd === 0 ? "纯存款" : "~$" + item.thresholdUsd}</span>
+            </div>
+            <h4 class="font-serif-title font-bold text-xs sm:text-sm text-[#1A1A1A] leading-snug">${item.country}</h4>
+            <p class="text-[11px] text-[#5C5850] line-clamp-1 mt-0.5">${item.visaTitle.split(' ')[0]}</p>
+          </div>
+          <div class="card-content mt-2.5 pt-1.5 border-t border-ink-subtle flex items-center justify-between text-[10px]">
+            <span class="text-[#B23A2F] font-semibold">${item.tag.split('·')[0]}</span>
+            <span class="font-mono text-[#1A1A1A]">&sect; 查阅</span>
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+
+      document.getElementById("filtered-count").innerText = `显示 ${count} / 15 卷档`;
+    }
+
+    // Populate Right Editorial Dossier
+    function renderDossier(id) {
+      const data = DOSSIER_DATA[id];
+      if (!data) return;
+
+      const pane = document.getElementById("dossier-pane");
+      pane.innerHTML = `
+        <!-- Dossier Masthead -->
+        <div class="border-b-2 border-ink pb-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2 mb-1.5">
+                <svg class="w-7 h-5 border border-[#1A1A1A] shadow-xs" viewBox="0 0 60 40">
+                  <use href="#${data.flagId}" />
+                </svg>
+                <span class="font-mono text-xs font-bold text-[#5C5850] tracking-wider uppercase">${data.code}</span>
+                <span class="stamp-badge text-[10px] px-1.5 py-0.5 bg-[#F0E1DE]">${data.stamp}</span>
+              </div>
+              <h2 class="text-2xl font-serif-title font-bold text-[#1A1A1A] tracking-tight leading-tight">
+                ${data.country} · ${data.visaTitle}
+              </h2>
+              <div class="text-xs text-[#5C5850] font-serif-title italic mt-0.5">${data.officialClass}</div>
+            </div>
+          </div>
+
+          <!-- Editorial Lead Quote Box -->
+          <div class="mt-4 p-3 bg-[#F4EFE6] border-l-4 border-[#B23A2F] border-t border-r border-b border-ink-subtle text-xs leading-relaxed">
+            <strong class="font-serif-title text-[#B23A2F] font-bold block mb-0.5">【专栏研判要义】</strong>
+            <p class="text-[#1A1A1A] font-serif-title text-sm">${data.verdict}</p>
+          </div>
+        </div>
+
+        <!-- 4 Core Tabular Ledger Cells -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-3 border border-ink bg-[#F4EFE6] shadow-[1px_1px_0px_rgba(26,26,26,0.9)]">
+            <div class="text-[10px] font-mono uppercase text-[#5C5850] mb-0.5">01 / 收入门槛核定</div>
+            <div class="text-xs font-bold text-[#1A1A1A] leading-snug">${data.thresholdFormatted}</div>
+            <div class="text-[11px] text-[#5C5850] mt-1 border-t border-ink-subtle pt-1">${data.depositRule}</div>
+          </div>
+
+          <div class="p-3 border border-ink bg-[#F4EFE6] shadow-[1px_1px_0px_rgba(26,26,26,0.9)]">
+            <div class="text-[10px] font-mono uppercase text-[#5C5850] mb-0.5">02 / 居留期限与展期</div>
+            <div class="text-xs font-bold text-[#1A1A1A] leading-snug">${data.durationRule}</div>
+          </div>
+
+          <div class="p-3 border border-ink bg-[#F4EFE6] shadow-[1px_1px_0px_rgba(26,26,26,0.9)]">
+            <div class="text-[10px] font-mono uppercase text-[#5C5850] mb-0.5">03 / 税务居民与规避考量</div>
+            <div class="text-xs text-[#1A1A1A] leading-normal">${data.taxRule}</div>
+          </div>
+
+          <div class="p-3 border border-ink bg-[#F4EFE6] shadow-[1px_1px_0px_rgba(26,26,26,0.9)]">
+            <div class="text-[10px] font-mono uppercase text-[#5C5850] mb-0.5">04 / 永居及护照可行性评估</div>
+            <div class="text-xs font-bold text-[#B23A2F] leading-snug mb-1">${data.prRule}</div>
+            <div class="text-[11px] text-[#5C5850] border-t border-ink-subtle pt-1">标准审核周期：${data.reviewTime}</div>
+          </div>
+        </div>
+
+        <!-- Pros & Highlights -->
+        <div class="border-t border-ink pt-3">
+          <h3 class="font-serif-title font-bold text-xs uppercase tracking-wider text-[#1A1A1A] mb-2 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 bg-[#1A1A1A] inline-block"></span>
+            <span>实地调研优势归纳 (为什么常被选)</span>
+          </h3>
+          <ul class="space-y-1.5 text-xs text-[#1A1A1A]">
+            ${data.pros.map(item => `
+              <li class="flex items-start gap-2 bg-[#F4EFE6] p-2 border border-ink-subtle">
+                <span class="text-[#B23A2F] font-bold">§</span>
+                <span class="leading-relaxed">${item}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+
+        <!-- Pitfalls & Caveats -->
+        <div class="border-t border-ink pt-3">
+          <h3 class="font-serif-title font-bold text-xs uppercase tracking-wider text-[#B23A2F] mb-2 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 bg-[#B23A2F] inline-block"></span>
+            <span>隐形阻碍与暗坑警示 (必查代价)</span>
+          </h3>
+          <ul class="space-y-1.5 text-xs text-[#1A1A1A]">
+            ${data.cons.map(item => `
+              <li class="flex items-start gap-2 bg-[#F0E1DE] p-2 border border-[#B23A2F]/40">
+                <span class="text-[#B23A2F] font-bold">!</span>
+                <span class="leading-relaxed text-[#1A1A1A]">${item}</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+
+        <!-- Official Checklist -->
+        <div class="border-t-2 border-ink pt-3">
+          <h3 class="font-serif-title font-bold text-xs uppercase tracking-wider text-[#1A1A1A] mb-2 flex items-center justify-between">
+            <span>官方申报核心材料清单 (必备核验凭单)</span>
+            <span class="font-mono text-[10px] text-[#5C5850]">CHECKLIST</span>
+          </h3>
+          <div class="border border-ink bg-[#F4EFE6] divide-y divide-ink-subtle text-xs text-[#1A1A1A]">
+            ${data.papers.map((p, idx) => `
+              <div class="p-2 flex items-start gap-2.5">
+                <span class="font-mono font-bold text-[10px] text-[#5C5850] mt-0.5">[0${idx+1}]</span>
+                <span class="leading-relaxed">${p}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // Select Country Action (Coordinates Map, Cards and Dossier)
+    function selectCountry(id) {
+      currentId = id;
+
+      // Update Map Zones
+      document.querySelectorAll(".map-country-zone").forEach(el => el.classList.remove("map-country-selected"));
+      const zone = document.getElementById(`geo-${id}`);
+      if (zone) zone.classList.add("map-country-selected");
+
+      // Update Map Pin Flags
+      document.querySelectorAll(".map-pin-flag").forEach(el => el.classList.remove("active"));
+      const pin = document.getElementById(`pin-${id}`);
+      if (pin) {
+        pin.classList.add("active");
+        pin.parentNode.appendChild(pin);
+      }
+
+      // Update Index Cards
+      document.querySelectorAll("[id^='idx-card-']").forEach(c => c.classList.remove("index-card-active"));
+      const activeCard = document.getElementById(`idx-card-${id}`);
+      if (activeCard) {
+        activeCard.classList.add("index-card-active");
+        activeCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+
+      // Render Right Pane
+      renderDossier(id);
+    }
+
+    // Map Hover Interactions
+    function hoverCountry(id, e) {
+      const data = DOSSIER_DATA[id];
+      if (!data) return;
+
+      // Highlight Zone
+      const zone = document.getElementById(`geo-${id}`);
+      if (zone) zone.classList.add("map-country-hover");
+
+      // Highlight Pin
+      const pin = document.getElementById(`pin-${id}`);
+      if (pin) pin.classList.add("active");
+
+      // Populate & Show Tooltip
+      const tooltip = document.getElementById("map-tooltip");
+      document.getElementById("tip-flag").innerHTML = `<svg class="w-full h-full" viewBox="0 0 60 40"><use href="#${data.flagId}" /></svg>`;
+      document.getElementById("tip-title").innerText = `${data.country.split(' ')[0]} · ${data.visaTitle.split(' ')[0]}`;
+      document.getElementById("tip-threshold").innerText = data.thresholdFormatted.split('(')[0];
+      document.getElementById("tip-duration").innerText = data.durationRule.split('；')[0].substring(0, 32) + "...";
+      document.getElementById("tip-tag").innerText = `[${data.tag}] · 点击调取全宗档案`;
+
+      tooltip.classList.remove("hidden");
+      positionTooltip(e);
+    }
+
+    function moveTooltip(e) {
+      positionTooltip(e);
+    }
+
+    function positionTooltip(e) {
+      const tooltip = document.getElementById("map-tooltip");
+      const pad = 15;
+      let x = e.clientX + pad;
+      let y = e.clientY + pad;
+
+      if (x + 240 > window.innerWidth) x = e.clientX - 250;
+      if (y + 110 > window.innerHeight) y = e.clientY - 120;
+
+      tooltip.style.left = `${x}px`;
+      tooltip.style.top = `${y}px`;
+    }
+
+    function leaveCountry(id) {
+      const zone = document.getElementById(`geo-${id}`);
+      if (zone) zone.classList.remove("map-country-hover");
+
+      const pin = document.getElementById(`pin-${id}`);
+      if (pin && id !== currentId) pin.classList.remove("active");
+
+      document.getElementById("map-tooltip").classList.add("hidden");
+    }
+
+    // Card Hover Sync with Map
+    function highlightCountryOnMap(id) {
+      const zone = document.getElementById(`geo-${id}`);
+      if (zone) zone.classList.add("map-country-hover");
+      const pin = document.getElementById(`pin-${id}`);
+      if (pin) pin.classList.add("active");
+    }
+
+    function unhighlightCountryOnMap(id) {
+      const zone = document.getElementById(`geo-${id}`);
+      if (zone) zone.classList.remove("map-country-hover");
+      const pin = document.getElementById(`pin-${id}`);
+      if (pin && id !== currentId) pin.classList.remove("active");
+    }
+
+    // Map View Switcher
+    function setMapView(view) {
+      const svg = document.getElementById("world-map-svg");
+      const buttons = ["world", "europe", "asia", "americas"];
+      
+      buttons.forEach(v => {
+        const btn = document.getElementById(`btn-v-${v}`);
+        if (btn) {
+          if (v === view) {
+            btn.className = "px-2.5 py-0.5 bg-[#1A1A1A] text-white font-medium text-[11px]";
+          } else {
+            btn.className = "px-2.5 py-0.5 hover:bg-[#E8E2D5] border-l border-ink text-[#1A1A1A] text-[11px]";
+          }
+        }
+      });
+
+      if (view === "world") {
+        svg.setAttribute("viewBox", "0 0 1000 500");
+      } else if (view === "europe") {
+        svg.setAttribute("viewBox", "420 80 200 120");
+      } else if (view === "asia") {
+        svg.setAttribute("viewBox", "680 160 170 140");
+      } else if (view === "americas") {
+        svg.setAttribute("viewBox", "140 140 260 210");
+      }
+    }
+
+    // Region Filter Handler
+    function filterRegion(reg) {
+      activeReg = reg;
+      const allRegs = ["all", "europe", "asia", "latam", "other"];
+      
+      allRegs.forEach(r => {
+        const b = document.getElementById(`btn-reg-${r}`);
+        if (b) {
+          if (r === reg) {
+            b.className = "px-3 py-1.5 border border-ink bg-[#1A1A1A] text-white font-medium text-xs";
+          } else {
+            b.className = "px-3 py-1.5 border border-ink bg-[#FAF6F0] hover:bg-[#E8E2D5] text-[#1A1A1A] font-medium text-xs";
+          }
+        }
+      });
+
+      if (reg === "europe") setMapView("europe");
+      else if (reg === "asia") setMapView("asia");
+      else if (reg === "latam") setMapView("americas");
+      else if (reg === "all") setMapView("world");
+
+      renderIndexCards();
+    }
+
+    // Budget Criteria Handler
+    function filterByBudget(b) {
+      activeBud = b;
+      document.querySelectorAll(".crit-btn").forEach(btn => {
+        btn.className = "crit-btn px-2 py-0.5 border border-ink bg-[#FAF6F0] hover:bg-[#E8E2D5] text-[#1A1A1A]";
+      });
+      event.target.className = "crit-btn px-2 py-0.5 border border-ink bg-[#1A1A1A] text-white font-medium";
+
+      renderIndexCards();
+    }
+
+    // Quick Assessment Dialog
+    function openQuizModal() {
+      document.getElementById("quiz-modal").classList.remove("hidden");
+      document.getElementById("quiz-modal").classList.add("flex");
+    }
+
+    function closeQuizModal() {
+      document.getElementById("quiz-modal").classList.add("hidden");
+      document.getElementById("quiz-modal").classList.remove("flex");
+    }
+
+    function execMatch() {
+      const inc = document.getElementById("q-income").value;
+      const goal = document.getElementById("q-goal").value;
+      const fam = document.getElementById("q-family").value;
+
+      closeQuizModal();
+
+      let target = "thailand";
+
+      if (inc === "deposit_only") {
+        if (goal === "pr") target = "mexico";
+        else target = "thailand";
+      } else if (goal === "pr") {
+        if (inc === "above_3000") target = "portugal";
+        else if (inc === "under_2500") target = "spain";
+        else target = "ecuador";
+      } else if (goal === "schengen") {
+        if (inc === "above_3000") target = "portugal";
+        else if (inc === "under_2500") target = "spain";
+        else target = "croatia";
+      } else if (goal === "tax") {
+        if (inc === "above_3000") target = "costarica";
+        else target = "croatia";
+      } else {
+        if (fam === "family") target = "malaysia";
+        else if (inc === "under_1500") target = "colombia";
+        else target = "thailand";
+      }
+
+      selectCountry(target);
+      const data = DOSSIER_DATA[target];
+      alert(`【核验判词】：依您所报之财务与诉求，最适备选档卷已定位为【${data.country} · ${data.visaTitle}】，右侧专栏已为您调出全宗案卷。`);
+    }
+
+    // Initialize On Load
+    window.addEventListener("DOMContentLoaded", () => {
+      renderIndexCards();
+      selectCountry("portugal");
+    });
+  </script>
+</body>
+</html>
