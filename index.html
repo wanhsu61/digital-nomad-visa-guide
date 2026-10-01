@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>游民签证地图</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* 单一浅色主题 */
+/* Layout: 顶部「我的条件」驱动全站 → 大幅世界地图 → 可筛选对比卡片 → 右侧抽屉式国家档案（护照签证页样式）→ 我的路线清单 → 中国申请人必读 */
+:root{
+  --paper:#F7F8F6;      /* 防伪底纹纸 */
+  --surface:#FFFFFF;
+  --sunk:#EEF1EF;
+  --ink:#15241F;
+  --muted:#5A6A64;
+  --line:#D3DBD6;
+  --maroon:#7C1F2D;     /* 中国护照封皮 */
+  --maroon-soft:#F3E4E6;
+  --gold:#A7823A;       /* 护照烫金 */
+  --ok:#1C7656; --ok-soft:#DDEFE7;
+  --near:#A86A12; --near-soft:#F6EAD3;
+  --far:#35557A; --far-soft:#E2E9F2;
+  --block:#9A3B45;
+  --land:#E1E6E2; --land-line:#FFFFFF; --sea:#EEF3F6;
+  --shadow:0 1px 2px rgba(21,36,31,.06),0 8px 24px rgba(21,36,31,.06);
+  --f-cjk:"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC","Source Han Sans SC",system-ui,sans-serif;
+  --f-num:"Barlow Condensed","Arial Narrow","Roboto Condensed",var(--f-cjk);
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,"Courier New",monospace;
+  --r:10px;
+  color-scheme:light;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:60px}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-cjk);font-size:14px;line-height:1.6;margin:0;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--maroon);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1400px;margin:0 auto;padding-inline:24px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.mono{font-family:var(--f-mono)}
+.eyebrow{font-size:12px;letter-spacing:.14em;color:var(--muted);font-weight:600}
+h1,h2,h3{text-wrap:balance;margin:0;line-height:1.25}
+h2{font-size:20px;font-weight:700}
+.sec{padding-block:32px 0}
+.sec-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 24px;margin-bottom:12px}
+.sec-head p{margin:2px 0 0;color:var(--muted);max-width:80ch;font-size:13px}
+
+/* ---------- top bar ---------- */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:color-mix(in srgb,var(--paper) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:20px;height:48px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;text-decoration:none;white-space:nowrap}
+.brand-mark{width:22px;height:30px;border-radius:3px;background:var(--maroon);position:relative;flex:none}
+.brand-mark::after{content:"";position:absolute;inset:9px 5px;border:1.5px solid var(--gold);border-radius:50%}
+.nav{display:flex;gap:4px;margin-left:auto;overflow-x:auto;scrollbar-width:none}
+.nav a{padding:6px 12px;border-radius:999px;text-decoration:none;color:var(--muted);font-size:14px;white-space:nowrap}
+.nav a:hover{background:var(--sunk);color:var(--ink)}
+
+/* ---------- hero ---------- */
+.hero{padding-block:18px 14px;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr) minmax(0,1fr);gap:28px;align-items:stretch}
+.h-text{display:flex;flex-direction:column;gap:10px;min-width:0}
+.big{font-family:"Heiti SC","SimHei","Microsoft YaHei","PingFang SC","Noto Sans SC",sans-serif;font-weight:900;font-size:clamp(40px,4.2vw,58px);line-height:1;letter-spacing:.03em;color:#0B0F0E;margin-top:2px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px}
+.big span{font-family:var(--f-num);font-weight:600;font-size:14px;letter-spacing:.35em;color:var(--maroon)}
+.hero .lead{color:var(--muted);font-size:14px;margin:0;line-height:1.65}
+.hero .lead b{color:var(--maroon);font-size:18px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:auto 0 0;border-top:2px solid var(--ink)}
+.stats div{padding:8px 8px 0 0;min-width:0}
+.stats div+div{padding-left:10px;border-left:1px solid var(--line)}
+.stats dt{font-size:11.5px;color:var(--muted);white-space:nowrap}
+.stats dd{margin:0;font-size:26px;font-weight:600;line-height:1.1}
+.stats small{font-size:11.5px;color:var(--muted)}
+.h-perks{display:flex;flex-direction:column;min-width:0}
+.h-perks h3{font-size:13px;letter-spacing:.12em;color:var(--muted);font-weight:600;padding-bottom:6px;border-bottom:2px solid var(--ink)}
+.perks{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;flex:1}
+.perks li{padding:8px 10px 8px 0;border-bottom:1px solid var(--line);display:grid;gap:1px;align-content:center}
+.perks li:nth-child(even){padding-left:12px;border-left:1px solid var(--line)}
+.perks b{font-size:14px}
+.perks span{font-size:12.5px;color:var(--muted);line-height:1.45}
+.hero-img{margin:0;position:relative;border-radius:14px;overflow:hidden;min-height:250px;box-shadow:var(--shadow)}
+.hero-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:72% 45%}
+.hero-img figcaption{position:absolute;left:10px;bottom:10px;background:rgba(255,255,255,.92);color:#15241F;font-size:12px;padding:4px 10px;border-radius:999px}
+
+/* ---------- atlas: map + index ---------- */
+.atlas{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:14px;padding-block:0 8px}
+.tool-title{font-size:15px}
+.side{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.side-head{display:flex;justify-content:space-between;align-items:baseline;padding:10px 14px;border-bottom:1px solid var(--line)}
+.side-head span{font-size:12px;color:var(--muted)}
+.rank{list-style:none;margin:0;padding:2px 0;overflow-y:auto;overflow-x:hidden;position:absolute;top:41px;left:0;right:0;bottom:0}
+.rank button{width:100%;display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:10px;border:0;border-bottom:1px solid var(--sunk);background:var(--surface);padding:6px 14px;text-align:left;cursor:pointer;overflow:hidden}
+.rank button:hover,.rank button.on{background:var(--sunk)}
+.flag{display:inline-block;position:relative;width:36px;height:24px;border-radius:3px;overflow:hidden;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+.flag img{position:absolute;inset:0;display:block;width:100%;height:100%;max-width:none;object-fit:cover}
+.rank .flag{width:28px;height:19px;border-radius:2px}
+.rank .nm{min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.rank .nm b{font-size:13.5px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank .nm small{font-family:var(--f-num);font-size:12px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank .v{font-family:var(--f-num);font-weight:600;font-size:15px;color:var(--ink);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.rank .v i{width:7px;height:7px;border-radius:50%;flex:none}
+.rank .v i.ok{background:var(--ok)}.rank .v i.near{background:var(--near)}.rank .v i.far{background:var(--far)}
+
+/* ---------- map ---------- */
+.mapcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.maptools{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.maptools .legend{margin-left:auto}
+.seg{display:inline-flex;background:var(--sunk);border-radius:8px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:4px 10px;border-radius:6px;font-size:13px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12);font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.mapbox{position:relative;background:var(--sea)}
+#map{display:block;width:100%;height:auto;aspect-ratio:1000/460;touch-action:manipulation}
+#map .land{fill:var(--land);stroke:var(--land-line);stroke-width:.5}
+#map .sphere{fill:var(--sea)}
+#map .ctry{stroke:var(--surface);stroke-width:.6;cursor:pointer;transition:fill .25s,opacity .25s}
+#map .ctry.ok{fill:color-mix(in srgb,var(--ok) 55%,var(--land))}
+#map .ctry.near{fill:color-mix(in srgb,var(--near) 55%,var(--land))}
+#map .ctry.far{fill:color-mix(in srgb,var(--far) 45%,var(--land))}
+#map .ctry.blocked{fill:url(#hatch)}
+#map .ctry.home{fill:color-mix(in srgb,var(--maroon) 22%,var(--land))}
+#map .ctry.dim{opacity:.35}
+#map .ctry:hover,#map .ctry.sel{stroke:var(--ink);stroke-width:1.2}
+#map .pin{cursor:pointer}
+#map .pin circle.dot{stroke:var(--surface)}
+#map .pin.ok circle.dot{fill:var(--ok)}
+#map .pin.near circle.dot{fill:var(--near)}
+#map .pin.far circle.dot{fill:var(--far)}
+#map .pin.dim{opacity:.3}
+#map .pin .halo{fill:none;stroke:var(--ink);opacity:0}
+#map .pin.sel .halo{opacity:1}
+#map .lbl{fill:var(--ink);font-family:var(--f-cjk);font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-linejoin:round;pointer-events:none;opacity:0;transition:opacity .2s}
+#map.zoomed .lbl,#map .pin.sel .lbl,#map .pin:hover .lbl{opacity:1}
+#map .home-pin circle{fill:var(--maroon)}
+#map .home-pin text{fill:var(--maroon);font-weight:700;paint-order:stroke;stroke:var(--surface);font-family:var(--f-cjk)}
+#map .route{fill:none;stroke:var(--gold);stroke-linecap:round}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--paper);padding:8px 10px;border-radius:8px;font-size:12.5px;line-height:1.5;max-width:230px;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s;z-index:5}
+.tip.on{opacity:1;transform:none}
+.tip b{font-size:14px}
+.mapnote{position:absolute;left:10px;bottom:8px;font-size:11.5px;color:var(--muted);background:rgba(255,255,255,.8);padding:2px 8px;border-radius:6px;pointer-events:none}
+
+/* ---------- compare ---------- */
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-bottom:12px}
+.toolbar select{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 10px;font-size:13px}
+.toggle{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);cursor:pointer}
+.count{margin-left:auto;font-size:13px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(205px,1fr));gap:12px}
+.card{position:relative;display:block;aspect-ratio:3/2;border:0;padding:0;border-radius:12px;overflow:hidden;cursor:pointer;text-align:left;color:#fff;background:#101614;box-shadow:0 1px 2px rgba(0,0,0,.08),0 6px 18px rgba(21,36,31,.10);transition:transform .2s,box-shadow .2s;isolation:isolate}
+.card:hover{transform:translateY(-3px);box-shadow:0 2px 4px rgba(0,0,0,.1),0 14px 30px rgba(21,36,31,.18)}
+.card .bg{position:absolute;inset:0;z-index:-2}
+.card .bg img{width:100%;height:100%;display:block;object-fit:cover;opacity:.5;transition:transform .5s,opacity .3s}
+.card:hover .bg img{transform:scale(1.05);opacity:.62}
+.card::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(to top,rgba(8,14,12,.55) 0%,rgba(8,14,12,.1) 55%,transparent 100%)}
+.card-in{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:10px 12px}
+.card-row{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.cont{font-size:11px;font-weight:600;letter-spacing:.06em;background:rgba(255,255,255,.9);color:#15241F;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap;flex:none}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.near{background:var(--near-soft);color:var(--near)}
+.pill.far{background:var(--far-soft);color:var(--far)}
+.card .pill{background:#fff;text-shadow:none}
+.card-name{display:grid;gap:2px;text-shadow:0 1px 3px rgba(0,0,0,.6),0 0 14px rgba(0,0,0,.35)}
+.name-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 10px;min-width:0}
+.name-row h3{flex:none;white-space:nowrap}
+.abbr{font-family:var(--f-num);font-weight:700;font-size:36px;line-height:.9;color:#FFD66B;letter-spacing:.02em;white-space:nowrap}
+.abbr.m{font-size:26px}.abbr.l{font-size:20px}
+.card-name h3{font-size:22px;font-weight:800;letter-spacing:.02em;line-height:1.1}
+.card-name .en{font-family:var(--f-num);font-size:12.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;opacity:.9}
+.card-name p{margin:2px 0 0;font-size:12px;opacity:.92;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical}
+.card.hit{box-shadow:0 0 0 3px var(--maroon),0 6px 18px rgba(21,36,31,.12)}
+.empty{grid-column:1/-1;text-align:center;color:var(--muted);padding:32px;border:1px dashed var(--line);border-radius:var(--r)}
+
+/* ---------- drawer ---------- */
+.scrim{position:fixed;inset:0;background:rgba(10,18,15,.45);z-index:40;opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(560px,100%);background:var(--paper);z-index:41;transform:translateX(102%);transition:transform .28s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;box-shadow:-10px 0 40px rgba(0,0,0,.18);padding-top:env(safe-area-inset-top,0px)}
+.drawer.on{transform:none}
+.d-head{padding:0 20px;display:grid;gap:12px}
+.minimap{position:relative;margin:0 -20px;aspect-ratio:1000/410;background:var(--sea);border-bottom:1px solid var(--line);cursor:pointer;overflow:hidden}
+.minimap svg{display:block;width:100%;height:100%}
+.minimap .land{fill:#C5CFCA;stroke:#EEF3F6;stroke-width:.5}
+.minimap .sphere{fill:var(--sea)}
+.minimap .tgt{fill:#E0271F;stroke:#9E1510;stroke-width:1.2}
+.minimap .dot{fill:#E53935;stroke:#fff;stroke-width:1.5}
+.minimap .ring{fill:rgba(224,39,31,.14);stroke:#E0271F;stroke-width:2.2}
+.minimap .mlbl{font-size:26px;font-weight:800;fill:#9E1510;paint-order:stroke;stroke:#fff;stroke-width:6px;stroke-linejoin:round;font-family:var(--f-cjk)}
+.minimap .ring2{fill:none;stroke:#E53935;stroke-width:1.5;transform-box:fill-box;transform-origin:center;animation:ping 1.8s ease-out infinite}
+@keyframes ping{from{transform:scale(.6);opacity:.9}to{transform:scale(2.2);opacity:0}}
+.minimap .cap{position:absolute;left:12px;top:12px;background:#fff;border-radius:8px;padding:5px 10px;font-size:12.5px;box-shadow:0 1px 4px rgba(0,0,0,.18);display:flex;gap:6px;align-items:center}
+.minimap .cap b{font-size:13px}
+.minimap .open{position:absolute;left:12px;bottom:10px;background:#fff;border-radius:8px;padding:4px 10px;font-size:12px;color:#1a73e8;box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.minimap .x{position:absolute;right:12px;top:12px;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.d-bar{display:flex;justify-content:space-between;align-items:center}
+.x{border:1px solid var(--line);background:var(--surface);width:34px;height:34px;border-radius:50%;cursor:pointer;font-size:18px;line-height:1}
+.d-id{display:flex;gap:14px;align-items:center}
+.d-id .flag{width:60px;height:40px}
+.d-id h2{font-size:24px}
+.d-id p{margin:2px 0 0;color:var(--muted);font-size:14px}
+.stamp{position:absolute;right:22px;top:calc(min(560px,100vw)*.4 + 22px);transform:rotate(-8deg);border:2px solid currentColor;border-radius:6px;padding:3px 10px;font-weight:800;font-size:15px;letter-spacing:.1em;opacity:.85}
+.stamp.ok{color:var(--ok)}.stamp.near{color:var(--near)}.stamp.far{color:var(--far)}
+.meter{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;gap:8px}
+.meter-row{display:flex;justify-content:space-between;font-size:13px;gap:8px}
+.bar{height:8px;background:var(--sunk);border-radius:99px;overflow:hidden;position:relative}
+.bar i{position:absolute;inset:0 auto 0 0;border-radius:99px;transition:width .4s}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tabs button{border:0;background:none;padding:10px 14px;font-size:14px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--maroon);font-weight:600}
+.d-body{flex:1;overflow-y:auto;padding:18px 20px 24px;display:grid;gap:18px;align-content:start}
+.d-body h4{margin:0 0 6px;font-size:14px}
+.d-body p{margin:0}
+.d-body ul{margin:0;padding-left:1.2em;display:grid;gap:4px}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.box.cn{border-color:color-mix(in srgb,var(--maroon) 40%,var(--line));background:color-mix(in srgb,var(--maroon-soft) 50%,var(--surface))}
+.box.cn h4{color:var(--maroon)}
+.facts-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.facts-grid div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.facts-grid dt{font-size:12px;color:var(--muted)}
+.facts-grid dd{margin:2px 0 0;font-size:14px;font-weight:600}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pc ul{font-size:14px}
+.pc .p h4{color:var(--ok)} .pc .c h4{color:var(--near)}
+.steps{list-style:none;padding:0;margin:0;counter-reset:s;display:grid;gap:0}
+.steps li{counter-increment:s;position:relative;padding:0 0 16px 40px}
+.steps li::before{content:counter(s);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;background:var(--ink);color:var(--paper);font-family:var(--f-num);font-weight:600;display:grid;place-items:center;font-size:15px}
+.steps li::after{content:"";position:absolute;left:12.5px;top:28px;bottom:2px;width:1px;background:var(--line)}
+.steps li:last-child::after{display:none}
+.steps b{display:block}
+.steps span{font-size:14px;color:var(--muted)}
+.links{display:grid;gap:8px}
+.links a{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);text-decoration:none;font-size:14px}
+.links a:hover{border-color:var(--maroon)}
+.links a span{color:var(--muted);font-size:12px;font-family:var(--f-mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.fee{width:100%;border-collapse:collapse;font-size:14px}
+.fee td{padding:9px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.fee td:last-child{text-align:right;font-weight:600;padding-left:12px}
+.note{font-size:12.5px;color:var(--muted)}
+.mrz{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;line-height:1.6;background:var(--sunk);color:var(--muted);padding:10px 14px;border-radius:8px;overflow-x:auto;white-space:pre}
+.d-foot{border-top:1px solid var(--line);padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:10px;background:var(--surface)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer}
+.btn.primary{background:var(--maroon);border-color:var(--maroon);color:#fff;flex:1}
+
+/* ---------- plan ---------- */
+.plan{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:20px}
+.plan-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:10px;align-content:start}
+.plan-card .d-id .flag{width:48px;height:32px}
+.progress-ring{display:flex;align-items:center;gap:14px}
+.progress-ring b{font-family:var(--f-num);font-size:44px;line-height:1}
+.checklist{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.checklist li label{display:flex;gap:10px;align-items:flex-start;padding:6px 10px;border-radius:8px;cursor:pointer}
+.checklist li label:hover{background:var(--sunk)}
+.checklist input{width:18px;height:18px;margin-top:3px;accent-color:var(--maroon);flex:none}
+.checklist .grp{font-size:12px;letter-spacing:.1em;color:var(--muted);font-weight:600;padding:12px 12px 4px}
+.checklist input:checked + span{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+.checklist small{display:block;color:var(--muted);font-size:13px;text-decoration:none}
+
+/* ---------- guide ---------- */
+.guide{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.g{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.g h3{font-size:15px;margin-bottom:6px;display:flex;gap:10px;align-items:baseline}
+.g h3 .mono{font-size:12px;color:var(--gold);font-weight:500}
+.g p,.g li{font-size:13px;color:var(--muted);line-height:1.55}
+.g p{margin:0 0 6px}
+.g ol,.g ul{margin:0;padding-left:1.2em;display:grid;gap:3px}
+.g strong{color:var(--ink);font-weight:600}
+.blocked-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.blocked-list div{border:1px dashed color-mix(in srgb,var(--block) 50%,var(--line));border-radius:8px;padding:12px 14px;font-size:13px;color:var(--muted)}
+.blocked-list b{color:var(--block);display:block;font-size:15px;margin-bottom:4px}
+.blocked-list .flag{width:30px;height:20px}
+
+footer{margin-top:40px;border-top:1px solid var(--line);padding-block:28px 40px;color:var(--muted);font-size:13px}
+footer .wrap{display:grid;gap:8px}
+
+@media (max-width:1180px){
+  .hero{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .hero-img{grid-column:1/-1;min-height:0;aspect-ratio:16/6}
+  .atlas{grid-template-columns:minmax(0,1fr) 280px}
+}
+@media (max-width:860px){
+  .hero{grid-template-columns:1fr;gap:16px}
+  .hero-img{aspect-ratio:16/9}
+  .atlas{grid-template-columns:1fr}
+  .side{height:420px}
+  .maptools .legend{margin-left:0}
+  .plan{grid-template-columns:1fr}
+  .nav a:nth-child(n+4){display:none}
+}
+@media (max-width:520px){
+  .wrap{padding-inline:16px}
+  .perks{grid-template-columns:1fr}
+  .perks li:nth-child(even){padding-left:0;border-left:0}
+  .stats dd{font-size:21px}
+  .stats{grid-template-columns:1fr 1fr;row-gap:10px}
+  .stats div:nth-child(3){padding-left:0;border-left:0}
+  .stats dt{white-space:normal}
+  .pc,.facts-grid{grid-template-columns:1fr}
+  .brand .brand-name small{display:none}
+  .count{margin-left:0;width:100%}
+  .stamp{top:calc(100vw*.4 + 20px);right:16px;font-size:13px}
+  .grid{grid-template-columns:1fr 1fr;gap:10px}
+  .card-in{padding:9px 10px}
+  .card-name p{display:none}
+  .card-name h3{font-size:18px}
+  .abbr{font-size:26px}.abbr.m{font-size:20px}.abbr.l{font-size:15px}
+  .name-row{gap:6px;flex-wrap:wrap}
+  .card-name .en{font-size:11.5px;letter-spacing:.06em}
+  .cont{font-size:10.5px;padding:2px 7px;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .card .pill{font-size:11px;padding:2px 7px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top"><span class="brand-mark" aria-hidden="true"></span><span class="brand-name">游民签证地图 <small class="mono" style="color:var(--muted);font-weight:400;font-size:12px">CN · 2026</small></span></a>
+    <nav class="nav" aria-label="页面导航">
+      <a href="#map-sec">地图</a><a href="#compare">对比</a><a href="#plan">我的路线</a><a href="#guide">中国申请人必读</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <section class="wrap hero">
+    <div class="h-text">
+      <div class="eyebrow">中国护照 · 签证指南 · 核对 2026-10</div>
+      <h1 class="big">数字游民<span>DIGITAL NOMAD</span></h1>
+      <p class="lead">靠互联网远程工作，不受固定办公地点束缚。<b class="num" id="h-count">22</b> 个国家向中国护照开放专门签证：在当地合法长住，同时继续为国内或海外的雇主、客户工作。</p>
+      <dl class="stats">
+        <div><dt>最低月收入门槛</dt><dd class="num">¥4,000</dd><small>阿尔巴尼亚</small></div>
+        <div><dt>最长有效期</dt><dd class="num">5 年</dd><small>泰国 DTV</small></div>
+        <div><dt>最快审批</dt><dd class="num">48 h</dd><small>阿联酋</small></div>
+        <div><dt>免申请费</dt><dd class="num">¥0</dd><small>毛里求斯</small></div>
+      </dl>
+    </div>
+    <div class="h-perks">
+      <h3>拿到签证之后</h3>
+      <ul class="perks">
+        <li><b>合法长住 1–5 年</b><span>不用每 30 或 90 天出境续签</span></li>
+        <li><b>收入照旧</b><span>继续为原雇主、客户工作</span></li>
+        <li><b>生活成本自选</b><span>一线收入，住进更低物价的城市</span></li>
+        <li><b>税务更友好</b><span>克罗地亚、阿联酋等境外收入免税</span></li>
+        <li><b>畅行申根 29 国</b><span>欧洲居留卡可在申根区自由往来</span></li>
+        <li><b>家人同行 · 可转永居</b><span>西班牙、葡萄牙、墨西哥等住满可转</span></li>
+      </ul>
+    </div>
+    <figure class="hero-img">
+      <img src="hero.jpg" alt="一位远程工作者在地中海的帆船上休息">
+      <figcaption>远程工作，也可以在地中海的甲板上完成</figcaption>
+    </figure>
+  </section>
+
+  <!-- MAP + INDEX -->
+  <section class="wrap atlas" id="map-sec">
+    <div class="mapcard">
+      <div class="maptools">
+        <strong class="tool-title">签证分布</strong>
+        <div class="seg" id="views" role="group" aria-label="地图视野">
+          <button type="button" data-v="world" aria-pressed="true">全球</button>
+          <button type="button" data-v="europe" aria-pressed="false">欧洲</button>
+          <button type="button" data-v="asia" aria-pressed="false">亚洲·中东</button>
+          <button type="button" data-v="americas" aria-pressed="false">美洲</button>
+          <button type="button" data-v="africa" aria-pressed="false">非洲</button>
+        </div>
+        <div class="legend">
+          <span><i style="background:var(--ok)"></i>≤ ¥1.5 万/月</span>
+          <span><i style="background:var(--near)"></i>¥1.5–3 万</span>
+          <span><i style="background:var(--far)"></i>&gt; ¥3 万</span>
+          <span><i style="background:var(--block)"></i>中国护照受限</span>
+        </div>
+      </div>
+      <div class="mapbox">
+        <svg id="map" viewBox="0 20 1000 460" role="img" aria-label="数字游民签证国家分布世界地图"></svg>
+        <div class="tip" id="tip"></div>
+        <div class="mapnote">点击国家查看档案，金色航线从北京出发 · 马耳他、巴巴多斯、毛里求斯以圆点表示</div>
+      </div>
+    </div>
+    <aside class="side">
+      <div class="side-head"><strong>22 国速查</strong><span>按月收入门槛排序</span></div>
+      <ol class="rank" id="rank"></ol>
+    </aside>
+  </section>
+
+  <!-- COMPARE -->
+  <section class="wrap sec" id="compare">
+    <div class="sec-head">
+      <div><div class="eyebrow">对比</div><h2>逐国比较门槛、期限与费用</h2><p>所有金额均已换算为人民币约数，方便快速比较；递交时以目的国官方金额为准。</p></div>
+    </div>
+    <div class="toolbar">
+      <div class="seg" id="regions" role="group" aria-label="地区">
+        <button type="button" data-r="all" aria-pressed="true">全部</button>
+        <button type="button" data-r="europe" aria-pressed="false">欧洲</button>
+        <button type="button" data-r="asia" aria-pressed="false">亚洲·中东</button>
+        <button type="button" data-r="americas" aria-pressed="false">美洲</button>
+        <button type="button" data-r="africa" aria-pressed="false">非洲</button>
+      </div>
+      <label for="sort" class="toggle">排序
+        <select id="sort">
+                    <option value="income">收入门槛 低→高</option>
+          <option value="fee">政府费用 低→高</option>
+          <option value="duration">最长停留 长→短</option>
+          <option value="speed">审批速度 快→慢</option>
+        </select>
+      </label>
+      <label class="toggle"><input type="checkbox" id="only-ok"> 只看入门门槛</label>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <!-- PLAN -->
+  <section class="wrap sec" id="plan">
+    <div class="sec-head">
+      <div><div class="eyebrow">我的路线</div><h2>选定目标，一步步准备</h2><p>在国家档案里点「设为我的目标」，这里会生成专属清单。勾选进度保存在当前浏览器里。</p></div>
+    </div>
+    <div class="plan" id="plan-body"></div>
+  </section>
+
+  <!-- GUIDE -->
+  <section class="wrap sec" id="guide">
+    <div class="sec-head">
+      <div><div class="eyebrow">中国申请人必读</div><h2>无论去哪国，都绕不开的几件事</h2></div>
+    </div>
+    <div class="guide">
+      <article class="g">
+        <h3><span class="mono">DOC</span>无犯罪记录证明与海牙认证</h3>
+        <ol>
+          <li>向户籍地或居住地公安机关申请开具无犯罪记录证明。</li>
+          <li>到公证处办理公证，并附目标国语言或英文译文。</li>
+          <li>自 2023 年 11 月 7 日起，中国已加入《取消外国公文书认证要求的公约》。目的国也是缔约国的（如欧盟各国、韩国、墨西哥、巴西、南非、毛里求斯），由外交部或授权地方外办出具<strong>附加证明书（Apostille）</strong>即可。</li>
+          <li>非缔约国（如泰国、阿联酋）仍需办理<strong>领事认证</strong>。</li>
+        </ol>
+        <p style="margin-top:8px">多数国家要求证明开具在 3–6 个月以内，建议最后办。</p>
+      </article>
+      <article class="g">
+        <h3><span class="mono">INC</span>给中国公司远程工作算不算「境外收入」</h3>
+        <p>多数国家只要求雇主或客户<strong>不在目的国</strong>，因此为中国公司远程工作通常符合条件。</p>
+        <ul>
+          <li>需要雇主出具同意远程办公、岗位无需到场的证明（中英文，部分国家需翻译认证）。</li>
+          <li>银行流水要体现<strong>固定、连续</strong>的入账，最好是工资代发记录。</li>
+          <li>西班牙等国对雇主成立年限、雇佣时长另有要求，逐国核对。</li>
+        </ul>
+      </article>
+      <article class="g">
+        <h3><span class="mono">FX</span>存款证明与外汇</h3>
+        <ul>
+          <li>存款证明可由国内银行开具人民币或外币证明，领馆按汇率折算；泰国 DTV 等要求存款持有约 3 个月。</li>
+          <li>个人每年便利化购汇额度为等值 5 万美元（约 ¥34 万），大额换汇需提前规划。</li>
+          <li>部分国家（葡萄牙、阿尔巴尼亚等）要求或建议在当地银行开户存款。</li>
+        </ul>
+      </article>
+      <article class="g">
+        <h3><span class="mono">TAX</span>税务：两边都要看</h3>
+        <ul>
+          <li>在目的国一个纳税年度内住满约 <strong>183 天</strong>，通常会成为当地税务居民。</li>
+          <li>中国税务居民的境外所得也需按规定申报；可利用双边税收协定避免重复征税。</li>
+          <li>CRS 下，海外账户信息会与中国税务机关交换，务必如实申报。</li>
+        </ul>
+      </article>
+      <article class="g">
+        <h3><span class="mono">VISA</span>先解决「怎么入境」</h3>
+        <ul>
+          <li>中国护照对泰国、马来西亚、阿联酋、毛里求斯、巴巴多斯等可免签入境，适合先去考察。</li>
+          <li>申根国家需要先有签证；西班牙境内申请路线要求持申根 C 签合法入境。</li>
+          <li>墨西哥、巴西、哥斯达黎加、南非等需提前办理入境签证。</li>
+        </ul>
+      </article>
+      <article class="g">
+        <h3><span class="mono">RISK</span>常见拒签原因</h3>
+        <ul>
+          <li>收入流水不连续，或大额一次性入账无法解释来源。</li>
+          <li>合同没有写明可远程工作，或雇主成立时间不足。</li>
+          <li>保险保额、覆盖范围不达标（申根通常需 ≥ 约 ¥23 万，西班牙要求无自付）。</li>
+          <li>文件过期、翻译不规范、认证链条不完整。</li>
+        </ul>
+      </article>
+    </div>
+
+    <div class="sec-head" style="margin-top:36px">
+      <div><div class="eyebrow">暂不对中国护照开放</div><h2>热门但走不通的通道</h2><p>这些国家的游民签证限定了国籍或入境方式，中国大陆护照目前无法直接申请。</p></div>
+    </div>
+    <div class="blocked-list" id="blocked"></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><strong style="color:var(--ink)">数据说明</strong>：整理自各国政府公开信息与主流移民资讯，最近一次核对为 2026 年 10 月 1 日。门槛、费用和流程经常调整，递交前请以文中「官方入口」为准。本站不提供法律或税务意见。</div>
+    <div>文中金额均为人民币约数，按 2026 年 9 月底汇率折算。国旗图片来自 flagcdn.com。</div>
+  </div>
+</footer>
+
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="国家档案"></aside>
+
+<script src="worldmap.js"></script>
+<script src="countries.js"></script>
+<script>
+(function(){
+const C = window.COUNTRIES, R = window.RATES, M = window.WORLDMAP, BLOCKED = window.RESTRICTED;
+const $ = s => document.querySelector(s);
+const byId = Object.fromEntries(C.map(c => [c.id, c]));
+const GOALS = {schengen:"畅行申根",pr:"通向永居",tax:"税务友好",cheap:"生活成本低",fast:"审批快",family:"携带家属"};
+const REG = {europe:"欧洲",asia:"亚洲·中东",americas:"美洲",africa:"非洲·印度洋"};
+
+/* ---------- storage ---------- */
+const store = {
+  get(k,d){try{const v=localStorage.getItem("dnv:"+k);return v==null?d:JSON.parse(v)}catch(e){return d}},
+  set(k,v){try{localStorage.setItem("dnv:"+k,JSON.stringify(v))}catch(e){}}
+};
+const S = {
+  goals: new Set(), region:"all", sort:"income", onlyOk:false,
+  view:"world", sel:null, target: store.get("target",null), checks: store.get("checks",{})
+};
+
+/* ---------- helpers ---------- */
+const cny = n => {
+  n = Math.round(n);
+  if (Math.abs(n) >= 10000) return "¥" + (n/10000).toFixed(n>=100000?0:1).replace(/\.0$/,"") + " 万";
+  return "¥" + n.toLocaleString("zh-CN");
+};
+const toCny = a => a ? a[0]*R[a[1]] : null;
+const reqIncome = c => c.inc ? toCny(c.inc) : null;
+const reqSavings = c => c.sav ? toCny(c.sav) : null;
+const feeCny = c => c.fee ? toCny(c.fee) : 0;
+/* 把文字里的外币金额换算成「约 ¥」 */
+function yuan(n){
+  if(n>=10000){const w=n/10000; return "¥"+(w>=100?Math.round(w):Math.round(w*10)/10)+" 万";}
+  const r=n>=1000?100:n>=100?10:1; return "¥"+(Math.round(n/r)*r).toLocaleString("en-US");
+}
+const NUM="\\d[\\d,]*(?:\\.\\d+)?";
+const PRE={"€":"EUR","$":"USD","RM":"MYR","ALL":"ALL","AED":"AED","MXN":"MXN","ZAR":"ZAR","₩":"KRW"};
+const SUF={"泰铢":"THB","欧元":"EUR","欧":"EUR","美元":"USD"};
+const RE_PRE=new RegExp("(?:约\\s?)?(€|\\$|RM|ALL|AED|MXN|ZAR|₩)\\s?("+NUM+")(\\s?[万亿])?(?:\\s?[–-]\\s?(?:€|\\$)?("+NUM+")(\\s?[万亿])?)?","g");
+const RE_SUF=new RegExp("(?:约\\s?)?("+NUM+")(\\s?[万亿])?(?:\\s?[–-]\\s?("+NUM+")(\\s?[万亿])?)?\\s?(泰铢|欧元|欧|美元)","g");
+const mul=u=>!u?1:u.trim()==="万"?1e4:1e8;
+const num=a=>+a.replace(/,/g,"");
+function conv(cur,a,ua,b,ub){const r=R[cur];const x=num(a)*mul(ua)*r;
+  if(b){const y=num(b)*mul(ub||ua)*r; const ys=yuan(y).slice(1), xs=yuan(x);
+    return "约 "+(xs.endsWith(" 万")&&ys.endsWith(" 万")?xs.slice(0,-2)+"–"+ys:xs+"–"+ys);}
+  return "约 "+yuan(x);}
+function rmb(s){
+  if(!s) return s;
+  s=s.replace(RE_PRE,(m,cur,a,ua,b,ub)=>conv(PRE[cur],a,ua,b,ub));
+  s=s.replace(RE_SUF,(m,a,ua,b,ub,cur)=>conv(SUF[cur],a,ua,b,ub));
+  return s.replace(/约 约 /g,"约 ");
+}
+
+// 按资金门槛分级（折合人民币/月；只要求存款的按存款÷12 计）
+const monthlyReq = c => c.inc ? reqIncome(c) : reqSavings(c)/12;
+function status(c){
+  const m=monthlyReq(c);
+  return {st: m<=15000 ? "ok" : m<=30000 ? "near" : "far", m};
+}
+const ST_TXT = {ok:"入门门槛",near:"中等门槛",far:"高门槛"};
+function thresholdShort(c){
+  if (c.inc && c.inc[0]===0) return {v:"无",u:"门槛"};
+  if (!c.inc) return {v:Math.round(reqSavings(c)/10000)+"",u:"万存款"};
+  const n=reqIncome(c); return {v:(n/10000).toFixed(1),u:"万/月"};
+}
+function feeShort(c){ const n=feeCny(c); if(!n) return {v:"免费",u:""}; return n>=10000?{v:(n/10000).toFixed(1),u:"万元"}:{v:Math.round(n/10)*10+"",u:"元"}; }
+function durShort(c){ const m=c.durationMonths; return m>=12&&m%12===0?{v:m/12+"",u:"年"}:{v:m+"",u:"个月"}; }
+
+/* ---------- flags: flagcdn.com ---------- */
+const ISO = Object.fromEntries([...C, ...BLOCKED].map(x=>[x.id, x.iso2]));
+const flagSrc = id => { const iso=ISO[id]; return (window.FLAG_DATA && window.FLAG_DATA[iso]) || `https://flagcdn.com/${iso}.svg`; };
+const flag = id => `<span class="flag" aria-hidden="true"><img src="${flagSrc(id)}" alt="" loading="lazy"></span>`;
+
+/* ---------- projection (d3 NaturalEarth1, same as base map) ---------- */
+function project([lon,lat]){
+  const l=lon*Math.PI/180, p=lat*Math.PI/180, p2=p*p, p4=p2*p2;
+  const x=l*(0.8707-0.131979*p2+p4*(-0.013791+p4*(0.003971*p2-0.001529*p4)));
+  const y=p*(1.007226+p2*(0.015085+p4*(-0.044475+0.028874*p2-0.005916*p4)));
+  return [M.t[0]+M.k*x, M.t[1]-M.k*y];
+}
+C.forEach(c=>{c.px = c.px || project(c.pin)});
+const HOME = project([116.4,39.9]);
+
+/* ---------- map ---------- */
+const svg = $("#map"), NS="http://www.w3.org/2000/svg";
+const VIEWS = {world:[0,20,1000,460], europe:[438,78,200,92], asia:[615,135,400,184], americas:[150,185,440,203], africa:[455,185,440,203]};
+let vb = VIEWS.world.slice();
+function buildMap(){
+  let h = `<defs><pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="4" height="4" fill="var(--land)"/><line x1="0" y1="0" x2="0" y2="4" stroke="var(--block)" stroke-width="1.4" opacity=".7"/></pattern></defs>`;
+  h += `<path class="sphere" d="${M.sphere}"/><path class="land" d="${M.base}"/>`;
+  for (const [k,d] of Object.entries(M.named)){
+    if (k==="china") { h += `<path class="ctry home" d="${d}"/>`; continue; }
+    if (k.startsWith("x-")) { h += `<path class="ctry blocked" data-x="${k}" d="${d}"/>`; continue; }
+    if (byId[k]) h += `<path class="ctry" data-id="${k}" d="${d}"/>`;
+    else h += `<path class="land" d="${d}"/>`;
+  }
+  h += `<path class="route" id="route" d=""/>`;
+  h += `<g class="home-pin"><circle cx="${HOME[0]}" cy="${HOME[1]}" r="3.5"/><text id="home-lbl" x="${HOME[0]+6}" y="${HOME[1]-6}" font-size="12">北京</text></g>`;
+  for (const c of C){
+    const [x,y]=c.px;
+    h += `<g class="pin" data-id="${c.id}" tabindex="0" role="button" aria-label="${c.name}"><circle class="halo" cx="${x}" cy="${y}" r="8"/><circle class="dot" cx="${x}" cy="${y}" r="4"/><text class="lbl" x="${x+6}" y="${y+4}" font-size="11">${c.name.replace(/（.*）/,"")}</text></g>`;
+  }
+  svg.innerHTML = h;
+  svg.addEventListener("click", e=>{
+    const t=e.target.closest("[data-id]"); if(t) openDrawer(t.dataset.id);
+    const x=e.target.closest("[data-x]"); if(x) document.getElementById("blocked").scrollIntoView({behavior:"smooth",block:"center"});
+  });
+  svg.addEventListener("keydown", e=>{ if((e.key==="Enter"||e.key===" ")&&e.target.dataset.id){e.preventDefault();openDrawer(e.target.dataset.id)} });
+  svg.addEventListener("mousemove", onHover);
+  svg.addEventListener("mouseleave", ()=>$("#tip").classList.remove("on"));
+}
+function onHover(e){
+  const tip=$("#tip"), t=e.target.closest("[data-id],[data-x]");
+  if(!t){tip.classList.remove("on");return}
+  let html;
+  if (t.dataset.x){ const b=BLOCKED.find(b=>b.id===t.dataset.x); html=`<b>${b.name}</b><br>对中国护照受限`; }
+  else { const c=byId[t.dataset.id], s=status(c); html=`<b>${c.name}</b> · ${ST_TXT[s.st]}<br>${c.visa}<br>门槛：${reqIncome(c)===0?"无":rmb(c.incomeText)}`; }
+  tip.innerHTML=html;
+  const box=svg.parentElement.getBoundingClientRect();
+  let x=e.clientX-box.left+14, y=e.clientY-box.top+14;
+  if (x>box.width-240) x-=250; if (y>box.height-90) y-=100;
+  tip.style.left=x+"px"; tip.style.top=y+"px"; tip.classList.add("on");
+}
+function paintMap(){
+  const inRegion = c => S.view==="world" || c.region===S.view;
+  svg.querySelectorAll(".ctry[data-id]").forEach(p=>{
+    const c=byId[p.dataset.id], s=status(c).st;
+    p.setAttribute("class",`ctry ${s}${(S.sel===c.id||S.hov===c.id)?" sel":""}${inRegion(c)?"":" dim"}`);
+  });
+  svg.querySelectorAll(".pin").forEach(g=>{
+    const c=byId[g.dataset.id], s=status(c).st;
+    g.setAttribute("class",`pin ${s}${(S.sel===c.id||S.hov===c.id)?" sel":""}${inRegion(c)?"":" dim"}`);
+  });
+}
+function scalePins(){
+  const s = vb[2]/1000;
+  svg.classList.toggle("zoomed", S.view!=="world");
+  svg.querySelectorAll(".pin").forEach(g=>{
+    const [x,y]=byId[g.dataset.id].px;
+    g.querySelector(".dot").setAttribute("r", Math.max(5*s,1.5));
+    g.querySelector(".dot").setAttribute("stroke-width", 1.2*s);
+    g.querySelector(".halo").setAttribute("r", 9*s);
+    g.querySelector(".halo").setAttribute("stroke-width", 1.2*s);
+    const t=g.querySelector(".lbl"); t.setAttribute("font-size", 11*s); t.setAttribute("x", x+6*s); t.setAttribute("y", y+4*s); t.setAttribute("stroke-width", 3*s);
+  });
+  svg.querySelectorAll(".ctry").forEach(p=>p.style.strokeWidth=(0.6*s)+"px");
+  const hp=svg.querySelector(".home-pin circle"); hp.setAttribute("r",3.5*s);
+  const hl=$("#home-lbl"); hl.setAttribute("font-size",12*s); hl.setAttribute("x",HOME[0]+6*s); hl.setAttribute("y",HOME[1]-6*s); hl.setAttribute("stroke-width",3*s);
+  const r=$("#route"); r.style.strokeWidth=(1.6*s)+"px"; r.style.strokeDasharray=`${5*s} ${4*s}`;
+}
+let anim;
+function setView(v){
+  S.view=v;
+  document.querySelectorAll("#views button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===v));
+  const from=vb.slice(), to=VIEWS[v], t0=performance.now(), D=matchMedia("(prefers-reduced-motion: reduce)").matches?0:520;
+  cancelAnimationFrame(anim);
+  const step=now=>{
+    const k=D?1:Math.min(1,(now-t0)/D), e=1-Math.pow(1-k,3);
+    vb=from.map((f,i)=>f+(to[i]-f)*e);
+    svg.setAttribute("viewBox",vb.join(" ")); scalePins();
+    if(k<1) anim=requestAnimationFrame(step);
+  };
+  anim=requestAnimationFrame(step);
+  paintMap();
+}
+function drawRoute(id){
+  const r=$("#route");
+  if(!id){r.setAttribute("d","");return}
+  const [x2,y2]=byId[id].px, [x1,y1]=HOME;
+  const dx=x2-x1, dy=y2-y1, dist=Math.hypot(dx,dy);
+  const cx=(x1+x2)/2 + dy*0.18, cy=(y1+y2)/2 - dist*0.28;
+  r.setAttribute("d",`M${x1},${y1} Q${cx},${cy} ${x2},${y2}`);
+  if(!matchMedia("(prefers-reduced-motion: reduce)").matches){
+    r.animate([{strokeDashoffset:dist},{strokeDashoffset:0}],{duration:900,easing:"ease-out"});
+  }
+}
+
+/* ---------- compare cards ---------- */
+
+function renderGrid(){
+  let list=C.filter(c=>S.region==="all"||c.region===S.region);
+  if(S.onlyOk) list=list.filter(c=>status(c).st==="ok");
+  const cmpIncome=monthlyReq;
+  const sorts={income:(a,b)=>cmpIncome(a)-cmpIncome(b),fee:(a,b)=>feeCny(a)-feeCny(b),duration:(a,b)=>b.durationMonths-a.durationMonths,speed:(a,b)=>a.speedWeeks-b.speedWeeks};
+  list.sort(sorts[S.sort]);
+  $("#count").textContent=`显示 ${list.length} / ${C.length} 个国家`;
+  if(!list.length){$("#grid").innerHTML=`<div class="empty">这个地区暂时没有入门门槛的国家。取消「只看入门门槛」查看全部。</div>`;return}
+  $("#grid").innerHTML=list.map(c=>{
+    const s=status(c), hit=[...S.goals].some(g=>c.tags.includes(g));
+    return `<button type="button" class="card${hit&&S.goals.size?" hit":""}" data-id="${c.id}" aria-label="${c.name}，${c.continent}，${ST_TXT[s.st]}">
+      <span class="bg" aria-hidden="true"><img src="${flagSrc(c.id)}" alt="" loading="lazy"></span>
+      <span class="card-in">
+        <span class="card-row"><span class="cont">${c.continent}</span><span class="pill ${s.st}">${ST_TXT[s.st]}</span></span>
+        <span class="card-name"><span class="en">${c.en} · ${c.code}</span><span class="name-row"><h3>${c.name.replace(/（.*）/,"")}</h3><span class="abbr${c.abbr.length>9?" l":c.abbr.length>4?" m":""}">${c.abbr}</span></span><p>${c.visa}</p></span>
+      </span>
+    </button>`;
+  }).join("");
+}
+$("#grid").addEventListener("click",e=>{const c=e.target.closest(".card");if(c)openDrawer(c.dataset.id)});
+
+/* ---------- drawer ---------- */
+let tab="overview";
+const MINI_AR=560/190;
+function miniMap(c){
+  let land=`<path class="land" vector-effect="non-scaling-stroke" d="${M.base}"/>`;
+  for(const [k,d] of Object.entries(M.named)) if(k!==c.id) land+=`<path class="land" vector-effect="non-scaling-stroke" d="${d}"/>`;
+  const tgt=M.named[c.id]?`<path class="tgt" vector-effect="non-scaling-stroke" d="${M.named[c.id]}"/>`:"";
+  const [x,y]=c.px;
+  return `<svg id="mini-svg" viewBox="0 36 1000 410" preserveAspectRatio="xMidYMid slice"><path class="sphere" d="${M.sphere}"/>${land}${tgt}
+    <circle class="ring" cx="${x}" cy="${y}" r="22"/><circle class="ring2" cx="${x}" cy="${y}" r="22"/><circle class="dot" cx="${x}" cy="${y}" r="6"/><text class="mlbl" x="${x>800?x-30:x+30}" y="${y+9}" text-anchor="${x>820?"end":"start"}">${c.name.replace(/（.*）/,"")}</text></svg>`;
+}
+function fitMini(){}
+function mrz(c){
+  const pad=(s,n)=>(s+"<".repeat(n)).slice(0,n);
+  const l1=pad(`V<${c.code}${c.en.toUpperCase().replace(/[^A-Z]/g,"<")}<<DIGITAL<NOMAD`,44);
+  const inc=c.inc?`CNY${Math.round(reqIncome(c))}`:`SAV${Math.round(reqSavings(c))}`;
+  const l2=pad(`CHN<<${inc}<<${c.durationMonths}M<<FEE${Math.round(feeCny(c))}<<${c.speedWeeks}W`,44);
+  return (l1+"\n"+l2).replace(/</g,"&lt;");
+}
+function meter(c){
+  const ri=reqIncome(c), rs=reqSavings(c), s=status(c);
+  let rows="";
+  if(ri!=null) rows+=`<div class="meter-row"><span>月收入门槛</span><span class="num" style="font-size:18px;font-weight:600">${ri===0?"无要求":cny(ri)+" / 月"}</span></div>`;
+  if(rs!=null) rows+=`<div class="meter-row"><span>${ri!=null?"或 存款":"存款要求"}</span><span class="num" style="font-size:18px;font-weight:600">${cny(rs)}</span></div>`;
+  return `<div class="meter">${rows}<div class="note">按 2026 年 9 月底汇率折算的约数，递交时以目的国官方金额为准</div></div>`;
+}
+function drawerHTML(c){
+  const s=status(c);
+  const T={
+    overview:`<p>${rmb(c.intro)}</p>
+      <dl class="facts-grid">
+        <div><dt>签证名称</dt><dd>${c.visa}</dd></div>
+        <div><dt>有效期</dt><dd>${rmb(c.duration)}</dd></div>
+        <div><dt>审批时间</dt><dd>约 ${c.speedWeeks} 周</dd></div>
+        <div><dt>所在地区</dt><dd>${REG[c.region]}</dd></div>
+      </dl>
+      <div class="pc"><div class="box p"><h4>签证优势</h4><ul>${c.pros.map(x=>`<li>${rmb(x)}</li>`).join("")}</ul></div><div class="box c"><h4>需要注意</h4><ul>${c.cons.map(x=>`<li>${rmb(x)}</li>`).join("")}</ul></div></div>
+      <div class="box cn"><h4>中国护照申请人</h4><p>${rmb(c.china)}</p></div>`,
+    reqs:`<div class="box"><h4>资金门槛</h4><p><b>${rmb(c.incomeText)}</b>${c.savingsText?`<br>${rmb(c.savingsText)}`:""}${c.familyText?`<br><span class="note">家属：${rmb(c.familyText)}</span>`:""}</p></div>
+      <div class="box"><h4>达成条件</h4><ul>${c.reqs.map(x=>`<li>${rmb(x)}</li>`).join("")}</ul></div>`,
+    apply:`<ol class="steps">${c.steps.map(x=>`<li><b>${x.t}</b><span>${rmb(x.d)}</span></li>`).join("")}</ol>
+      <div><h4>官方入口</h4><div class="links">${c.links.map(([n,u])=>`<a href="${u}" target="_blank" rel="noopener">${n}<span>${u.replace(/^https?:\/\//,"").replace(/\/$/,"")} ↗</span></a>`).join("")}</div>
+      <p class="note" style="margin-top:8px">链接指向政府或官方机构网站，部分页面在国内访问可能较慢。</p></div>
+      ${c.sources?`<div><h4>整理参考</h4><ul class="note">${c.sources.map(u=>`<li><a href="${u}" target="_blank" rel="noopener">${u.replace(/^https?:\/\/(www\.)?/,"").split("/")[0]}</a></li>`).join("")}</ul></div>`:""}`,
+    fees:`<table class="fee"><tbody>${c.fees.map(([k,v])=>`<tr><td>${k}</td><td>${rmb(v)}</td></tr>`).join("")}</tbody></table>
+      <div class="box"><h4>预算参考</h4><p class="note">政府费用约 <b class="num" style="font-size:16px;color:var(--ink)">${feeCny(c)?cny(feeCny(c)):"¥0"}</b>。另建议预留：文件公证认证翻译 ¥1,000–3,000，医疗保险 ¥1,500–6,000/年，首月住宿押金与机票。</p></div>`
+  };
+  return `<div class="d-head" style="position:relative">
+      <div class="minimap" id="d-mini" title="在大地图上查看">${miniMap(c)}<span class="cap"><i style="width:8px;height:8px;border-radius:50%;background:#EA4335;display:inline-block"></i><b>${c.name}</b><span style="color:var(--muted)">${c.continent}</span></span><span class="open">查看大地图 ↗</span><button class="x" id="d-close" aria-label="关闭">×</button></div>
+      <div class="d-bar"><span class="eyebrow">国家档案 · ${c.continent}</span></div>
+      <div class="d-id">${flag(c.id)}<div><h2>${c.name}</h2><p>${c.visa}</p></div></div>
+      <span class="stamp ${s.st}">${ST_TXT[s.st]}</span>
+      ${meter(c)}
+      <div class="tabs" role="tablist">
+        ${[["overview","概览"],["reqs","达成条件"],["apply","申请方法"],["fees","申请费用"]].map(([k,n])=>`<button role="tab" data-t="${k}" aria-selected="${tab===k}">${n}</button>`).join("")}
+      </div>
+    </div>
+    <div class="d-body">${T[tab]}<div class="mrz" aria-label="签证代码">${mrz(c)}</div></div>
+    <div class="d-foot">
+      <button class="btn primary" id="d-target">${S.target===c.id?"✓ 已是我的目标，查看路线":"设为我的目标"}</button>
+      <button class="btn" id="d-map">在地图上看</button>
+    </div>`;
+}
+function openDrawer(id){
+  S.sel=id; const d=$("#drawer");
+  d.innerHTML=drawerHTML(byId[id]); fitMini(byId[id]); d.classList.add("on"); d.setAttribute("aria-hidden","false"); $("#scrim").classList.add("on");
+  document.body.style.overflow="hidden";
+  paintMap(); drawRoute(id);
+  setTimeout(()=>$("#d-close")&&$("#d-close").focus(),50);
+}
+function closeDrawer(){
+  const d=$("#drawer"); d.classList.remove("on"); d.setAttribute("aria-hidden","true"); $("#scrim").classList.remove("on");
+  document.body.style.overflow="";
+}
+$("#drawer").addEventListener("click",e=>{
+  if(e.target.closest("#d-close")) return closeDrawer();
+  const t=e.target.closest("[data-t]"); if(t){tab=t.dataset.t; $("#drawer").innerHTML=drawerHTML(byId[S.sel]); fitMini(byId[S.sel]); return}
+  if(e.target.closest("#d-target")){ if(S.target!==S.sel){S.target=S.sel;store.set("target",S.target)} renderPlan(); closeDrawer(); document.getElementById("plan").scrollIntoView({behavior:"smooth"}); return}
+  if(e.target.closest("#d-map")||e.target.closest("#d-mini")){ const c=byId[S.sel]; closeDrawer(); setView(c.region); document.getElementById("map-sec").scrollIntoView({behavior:"smooth"}); }
+});
+$("#scrim").addEventListener("click",closeDrawer);
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeDrawer()});
+
+/* ---------- plan ---------- */
+const PREP=[
+  ["passport","护照有效期 ≥ 18 个月","多数国家要求递签时护照剩余有效期覆盖整个居留期。"],
+  ["income","整理 3–6 个月收入流水","工资代发记录优先，保持入账固定、连续。"],
+  ["contract","雇主远程办公证明或客户合同","写明岗位可远程、无需到场，必要时翻译认证。"],
+  ["police","无犯罪记录证明 + 公证 + 认证","海牙缔约国用附加证明书，非缔约国走领事认证。"],
+  ["insurance","购买符合要求的医疗保险","核对保额、覆盖地区和是否无自付。"],
+  ["tax","规划税务身份","确认 183 天规则、双边税收协定和境外所得申报。"]
+];
+function renderPlan(){
+  const el=$("#plan-body"), c=S.target?byId[S.target]:null;
+  if(!c){
+    el.innerHTML=`<div class="plan-card"><span class="sample" style="justify-self:start">还没有目标</span><h3>先挑一个国家</h3><p class="note" style="font-size:14px">在地图或对比卡片中打开任意国家，点击「设为我的目标」。这里会生成资金差距和逐项准备清单。</p>
+      <div><a class="btn primary" href="#compare" style="display:inline-block;text-decoration:none">去挑选国家</a></div></div>
+      <div class="plan-card"><div class="eyebrow">清单会包含</div><ul class="checklist">${PREP.map(([k,t,d])=>`<li><label><input type="checkbox" disabled><span>${t}<small>${d}</small></span></label></li>`).join("")}</ul></div>`;
+    return;
+  }
+  const ck=S.checks[c.id]||{};
+  const items=[...PREP.map(([k,t,d])=>({k:"p-"+k,t,d,g:"通用准备"})), ...c.steps.map((s,i)=>({k:"s-"+i,t:s.t,d:s.d,g:c.name+" 申请步骤"}))];
+  const done=items.filter(i=>ck[i.k]).length, pct=Math.round(done/items.length*100);
+  let lastG="";
+  const lis=items.map(i=>{const g=i.g!==lastG?`<li class="grp">${i.g}</li>`:"";lastG=i.g;
+    return g+`<li><label><input type="checkbox" data-k="${i.k}" ${ck[i.k]?"checked":""}><span>${i.t}<small>${rmb(i.d)}</small></span></label></li>`}).join("");
+  el.innerHTML=`<div class="plan-card">
+      <div class="d-id">${flag(c.id)}<div><h3 style="font-size:20px">${c.name}</h3><p class="note" style="font-size:13px">${c.visa}</p></div></div>
+      <div class="progress-ring"><b>${pct}%</b><div class="note" style="font-size:13px">已完成 ${done} / ${items.length} 项<br>准备进度</div></div>
+      <div class="bar"><i style="width:${pct}%;background:var(--maroon)"></i></div>
+      ${meter(c)}
+      <div class="links">${c.links.map(([n,u])=>`<a href="${u}" target="_blank" rel="noopener">${n}<span>官方入口 ↗</span></a>`).join("")}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="p-open">查看档案</button><button class="btn" id="p-clear">更换目标</button></div>
+    </div>
+    <div class="plan-card"><ul class="checklist">${lis}</ul></div>`;
+}
+$("#plan-body").addEventListener("change",e=>{
+  const k=e.target.dataset.k; if(!k||!S.target) return;
+  S.checks[S.target]=S.checks[S.target]||{}; S.checks[S.target][k]=e.target.checked; store.set("checks",S.checks); renderPlan();
+});
+$("#plan-body").addEventListener("click",e=>{
+  if(e.target.closest("#p-open")) openDrawer(S.target);
+  if(e.target.closest("#p-clear")){S.target=null;store.set("target",null);renderPlan();document.getElementById("compare").scrollIntoView({behavior:"smooth"})}
+});
+
+/* ---------- render ---------- */
+function renderRank(){
+  const list=[...C].sort((a,b)=>monthlyReq(a)-monthlyReq(b));
+  $("#rank").innerHTML=list.map(c=>{const s=status(c).st, m=monthlyReq(c);
+    const v=(c.inc&&c.inc[0]===0)?"无门槛":!c.inc?`存 ${Math.round(reqSavings(c)/10000)} 万`:(m>=10000?(m/10000).toFixed(1)+" 万":"¥"+(Math.round(m/100)*100).toLocaleString("en-US"));
+    return `<li><button type="button" data-id="${c.id}">${flag(c.id)}<span class="nm"><b>${c.name.replace(/（.*）/,"")}</b><small>${c.en}</small></span><span class="v"><i class="${s}"></i>${v}</span></button></li>`}).join("");
+}
+$("#rank").addEventListener("click",e=>{const b=e.target.closest("[data-id]");if(b)openDrawer(b.dataset.id)});
+$("#rank").addEventListener("mouseover",e=>{const b=e.target.closest("[data-id]");const id=b?b.dataset.id:null;if(id!==S.hov){S.hov=id;paintMap();drawRoute(id||S.sel)}});
+$("#rank").addEventListener("mouseleave",()=>{S.hov=null;paintMap();drawRoute(null)});
+function updateAll(){ renderRank(); paintMap(); renderGrid(); renderPlan(); }
+document.querySelectorAll("#views button").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.v)));
+document.querySelectorAll("#regions button").forEach(b=>b.addEventListener("click",()=>{S.region=b.dataset.r;document.querySelectorAll("#regions button").forEach(x=>x.setAttribute("aria-pressed",x===b));renderGrid()}));
+$("#sort").addEventListener("change",e=>{S.sort=e.target.value;renderGrid()});
+$("#only-ok").addEventListener("change",e=>{S.onlyOk=e.target.checked;renderGrid()});
+
+/* ---------- boot ---------- */
+$("#h-count").textContent=C.length;
+$("#blocked").innerHTML=BLOCKED.map(b=>`<div><b style="display:flex;align-items:center;gap:8px">${flag(b.id)}${b.name}</b>${b.note}</div>`).join("");
+buildMap(); scalePins(); updateAll();
+})();
+</script>
+
+</body>
+</html>
